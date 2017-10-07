@@ -76,10 +76,11 @@ get_sources() {
   ${SRC_DIR7}/scripts/extract-ikconfig configs7.ko > ${SRC_DIR7}/.config
 
   # Prepare modules
-  info "Preparing ${UNAME_R} modules..."
-  make -C ${SRC_DIR}  ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=+ modules_prepare
-  info "Preparing ${UNAME_R7} modules..."
-  make -C ${SRC_DIR7} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=+ modules_prepare
+  for r in ${SRC_DIR} ${SRC_DIR7}; do
+    info "Preparing $r modules..."
+    make -C $r  ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=+ modules_prepare
+    [ $? -eq 0 ] || die "make modules_prepare failed!"
+  done
 
   info "\nDone, you can now build kernel modules"
 }
