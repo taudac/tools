@@ -38,14 +38,14 @@ get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
   [[ ${RASPI_COMMIT} =~ [0-9a-f]{40} ]] || die "Can't find Raspberry Pi commit hash!"
-  info "Raspberrypi commit is ${RASPI_COMMIT}"
+  info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
   # Get the kernel release version
   UNAME_R=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string   | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g')
   UNAME_R7=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string7 | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g')
   info "Release names are ${UNAME_R} and ${UNAME_R7}"
 
-  # Make directories
+  # Make directories and links
   SRC_DIR="${DEST_DIR}/usr/src/${UNAME_R}"
   SRC_DIR7="${DEST_DIR}/usr/src/${UNAME_R7}"
   MOD_DIR="${DEST_DIR}/lib/modules/${UNAME_R}"
@@ -54,6 +54,8 @@ get_sources() {
   mkdir -p ${SRC_DIR7}
   mkdir -p ${MOD_DIR}
   mkdir -p ${MOD_DIR7}
+  ln -sv ${SRC_DIR}  ${MOD_DIR}/build
+  ln -sv ${SRC_DIR7} ${MOD_DIR7}/build
 
   # Get Module.symvers files
   curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module.symvers  > ${SRC_DIR}/Module.symvers
@@ -78,10 +80,6 @@ get_sources() {
   make -C ${SRC_DIR}  ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=+ modules_prepare
   info "Preparing ${UNAME_R7} modules..."
   make -C ${SRC_DIR7} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=+ modules_prepare
-
-  # Make links
-  ln -sv ${SRC_DIR}  ${MOD_DIR}/build
-  ln -sv ${SRC_DIR7} ${MOD_DIR7}/build
 
   info "\nDone, you can now build kernel modules"
 }
