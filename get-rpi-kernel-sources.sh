@@ -34,6 +34,7 @@ Mandatory arguments:
 Optional arguments:
   -d, --directory=DIR       store the sources in DIR, defaults to '/tmp'
   -L, --local-version=VER   set make variable LOCALVERISON to VER, defaults to '+'
+  -E, --extra-version=VER   set make variable EXTRAVERSION to VER
   -n, --no-links            skip making symbolic '/build' links
       --help                display this help and exit
 "
@@ -87,9 +88,9 @@ get_sources() {
     info "Preparing $r modules..."
     # Check if we need to cross compile
     if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
-      make -C $r LOCALVERSION=${LOCALVERSION} modules_prepare
+      make -C $r LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} modules_prepare
     else
-      make -C $r LOCALVERSION=${LOCALVERSION} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
+      make -C $r LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
     fi
     [ $? -eq 0 ] || die "make modules_prepare failed!"
   done
@@ -99,7 +100,7 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-args=$(getopt --name "$me" -o x:,d:,L:,n -l hexxeh-commit:,directory:,local-version:,no-links,help -- "$@")
+args=$(getopt --name "$me" -o x:,d:,L:,E:,n -l hexxeh-commit:,directory:,local-version:,extra-version:,no-links,help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
 
@@ -108,6 +109,7 @@ while [ $# -gt 0 ]; do
     -x | --hexxeh-commit) HEXXEH_COMMIT="$2"; shift 2 ;;
     -d | --directory)     DEST_DIR="$2"; shift 2 ;;
     -L | --local-version) LOCALVERSION="$2"; shift 2 ;;
+    -E | --extra-version) EXTRAVERSION="$2"; shift 2 ;;
     -n | --no-links)      DO_LINKS="false"; shift ;;
          --help)          usage; exit 0 ;;
     --)                   shift; break ;;
