@@ -104,15 +104,14 @@ args=$(getopt --name "$me" -o x:,d:,L:,n -l hexxeh-commit:,directory:,local-vers
 eval set -- $args
 
 while [ $# -gt 0 ]; do
-    case "$1" in
-        -x | --hexxeh-commit) HEXXEH_COMMIT="$2"; shift ;;
-        -d | --directory)     DEST_DIR="$2"; shift ;;
-        -L | --local-version) LOCALVERSION="$2"; shift ;;
-        -n | --no-links)      DO_LINKS="false"; shift ;;
-             --help)          usage; exit 0 ;;
-        --)                   shift; break ;;
-    esac
-    shift
+  case "$1" in
+    -x | --hexxeh-commit) HEXXEH_COMMIT="$2"; shift 2 ;;
+    -d | --directory)     DEST_DIR="$2"; shift 2 ;;
+    -L | --local-version) LOCALVERSION="$2"; shift 2 ;;
+    -n | --no-links)      DO_LINKS="false"; shift ;;
+         --help)          usage; exit 0 ;;
+    --)                   shift; break ;;
+  esac
 done
 
 [[ ${HEXXEH_COMMIT} ]] || die "Can't proceed without Hexxeh commit hash. \
