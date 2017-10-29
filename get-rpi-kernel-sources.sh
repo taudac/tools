@@ -12,6 +12,8 @@ RASPI_URL="https://github.com/raspberrypi/linux/archive"
 HEXXEH_COMMIT=
 DEST_DIR="/tmp"
 
+LOCALVERSION=+
+
 info() {
   printf "${cgrn}$1${cend}\n"
 }
@@ -22,7 +24,7 @@ die() {
 }
 
 usage() {
-  echo -e "Usage: $me -x=HASH [-d=DIR]
+  echo -e "Usage: $me -x=HASH [OPTIONS]
 Download and prepare Raspberry Pi kernel sources for building out of kernel modules.
 
 Mandatory arguments:
@@ -30,6 +32,7 @@ Mandatory arguments:
 
 Optional arguments:
   -d, --directory=DIR       store the sources in DIR, defaults to '/tmp'
+  -L, --local-version=VER   set make variable LOCALVERISON to VER, defaults to '+'
       --help                display this help and exit
 "
 }
@@ -78,7 +81,7 @@ get_sources() {
   # Prepare modules
   for r in ${SRC_DIR} ${SRC_DIR7}; do
     info "Preparing $r modules..."
-    make -C $r  ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=+ modules_prepare
+    make -C $r  ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=${LOCALVERSION} modules_prepare
     [ $? -eq 0 ] || die "make modules_prepare failed!"
   done
 
@@ -87,7 +90,7 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-args=$(getopt --name "$me" -o x:,d: -l hexxeh-commit:,directory:,help -- "$@")
+args=$(getopt --name "$me" -o x:,d:,L: -l hexxeh-commit:,directory:,local-version:,help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
 
@@ -95,6 +98,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -x | --hexxeh-commit) HEXXEH_COMMIT="$2"; shift ;;
         -d | --directory)     DEST_DIR="$2"; shift ;;
+        -L | --local-version) LOCALVERSION="$2"; shift ;;
              --help)          usage; exit 0 ;;
         --)                   shift; break ;;
     esac
