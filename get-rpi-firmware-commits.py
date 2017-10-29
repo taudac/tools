@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2.7
 import urllib2, json
 
 GITHUB_API_URL = 'https://api.github.com/repos'
