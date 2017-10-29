@@ -13,6 +13,7 @@ HEXXEH_COMMIT=
 DEST_DIR="/tmp"
 
 LOCALVERSION=+
+DO_LINKS="true"
 
 info() {
   printf "${cgrn}$1${cend}\n"
@@ -33,6 +34,7 @@ Mandatory arguments:
 Optional arguments:
   -d, --directory=DIR       store the sources in DIR, defaults to '/tmp'
   -L, --local-version=VER   set make variable LOCALVERISON to VER, defaults to '+'
+  -n, --no-links            skip making symbolic '/build' links
       --help                display this help and exit
 "
 }
@@ -55,10 +57,12 @@ get_sources() {
   MOD_DIR7="${DEST_DIR}/lib/modules/${UNAME_R7}"
   mkdir -p ${SRC_DIR}
   mkdir -p ${SRC_DIR7}
-  mkdir -p ${MOD_DIR}
-  mkdir -p ${MOD_DIR7}
-  ln -sv ${SRC_DIR}  ${MOD_DIR}/build
-  ln -sv ${SRC_DIR7} ${MOD_DIR7}/build
+  if [ ${DO_LINKS} = "true" ]; then
+    mkdir -p ${MOD_DIR}
+    mkdir -p ${MOD_DIR7}
+    ln -sv ${SRC_DIR}  ${MOD_DIR}/build
+    ln -sv ${SRC_DIR7} ${MOD_DIR7}/build
+  fi
 
   # Get Module.symvers files
   curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module.symvers  > ${SRC_DIR}/Module.symvers
@@ -95,7 +99,7 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-args=$(getopt --name "$me" -o x:,d:,L: -l hexxeh-commit:,directory:,local-version:,help -- "$@")
+args=$(getopt --name "$me" -o x:,d:,L:,n -l hexxeh-commit:,directory:,local-version:,no-links,help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
 
@@ -104,6 +108,7 @@ while [ $# -gt 0 ]; do
         -x | --hexxeh-commit) HEXXEH_COMMIT="$2"; shift ;;
         -d | --directory)     DEST_DIR="$2"; shift ;;
         -L | --local-version) LOCALVERSION="$2"; shift ;;
+        -n | --no-links)      DO_LINKS="false"; shift ;;
              --help)          usage; exit 0 ;;
         --)                   shift; break ;;
     esac
