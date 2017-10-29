@@ -81,7 +81,12 @@ get_sources() {
   # Prepare modules
   for r in ${SRC_DIR} ${SRC_DIR7}; do
     info "Preparing $r modules..."
-    make -C $r  ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION=${LOCALVERSION} modules_prepare
+    # Check if we need to cross compile
+    if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
+      make -C $r LOCALVERSION=${LOCALVERSION} modules_prepare
+    else
+      make -C $r LOCALVERSION=${LOCALVERSION} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
+    fi
     [ $? -eq 0 ] || die "make modules_prepare failed!"
   done
 
@@ -112,3 +117,4 @@ Type '$me --help' to get usage information."
 # Main
 cd /tmp
 get_sources
+
