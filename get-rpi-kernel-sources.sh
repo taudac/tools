@@ -21,7 +21,7 @@ info() {
 }
 
 die() {
-  [[ $1 ]] && printf "${cred}ERROR: $1${cend}\n"
+  [[ $1 ]] && printf "${cred}ERROR: $1${cend}\n" >&2
   exit 1
 }
 
