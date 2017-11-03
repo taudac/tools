@@ -45,12 +45,14 @@ Optional arguments:
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
-  [[ ${RASPI_COMMIT} =~ [0-9a-f]{40} ]] || die "Can't find Raspberry Pi commit hash!"
+  [[ ${RASPI_COMMIT} =~ [0-9a-f]{40} ]] \
+    || die "Can't find Raspberry Pi commit hash!"
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
   # Get the kernel release version
   for uname in "uname_string" "uname_string7"; do
-    UNAME_R+=($(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/${uname} | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g'))
+    UNAME_R+=($(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/${uname} \
+      | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g'))
   done
   info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
@@ -75,7 +77,8 @@ get_sources() {
     fi
 
     # Get Module.symvers files
-    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${SUFFIX}.symvers > ${SRC_DIR}/Module.symvers
+    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${SUFFIX}.symvers \
+      > ${SRC_DIR}/Module.symvers
 
     # Extract the sources
     info "Extracting kernel sources..."
@@ -83,16 +86,21 @@ get_sources() {
 
     # Get .config files
     info "Extracting .config files..."
-    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko > configs.ko
+    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko \
+      > configs.ko
     ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
 
     # Prepare modules
     info "Preparing $r modules..."
     # Check if we need to cross compile
     if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
-      make -C ${SRC_DIR} LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} modules_prepare
+      make -C ${SRC_DIR} \
+        LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
+        modules_prepare
     else
-      make -C ${SRC_DIR} LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
+      make -C ${SRC_DIR} \
+        LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
+        ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
     fi
     [ $? -eq 0 ] || die "make modules_prepare failed!"
   done
@@ -102,7 +110,9 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-args=$(getopt --name "$me" -o x:,d:,w:,L:,E:,n -l hexxeh-commit:,directory:,working-directory:,local-version:,extra-version:,no-links,help -- "$@")
+OPTIONS=x:,d:,w:,L:,E:,n
+LONG_OPTIONS=hexxeh-commit:,directory:,working-directory:,local-version:,extra-version:,no-links
+args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
 
