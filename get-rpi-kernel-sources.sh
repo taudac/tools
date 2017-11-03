@@ -47,50 +47,50 @@ get_sources() {
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
   # Get the kernel release version
-  UNAME_R=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string   | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g')
-  UNAME_R7=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string7 | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g')
-  info "Release names are ${UNAME_R} and ${UNAME_R7}"
-
-  # Make directories and links
-  SRC_DIR="${DEST_DIR}/usr/src/${UNAME_R}"
-  SRC_DIR7="${DEST_DIR}/usr/src/${UNAME_R7}"
-  MOD_DIR="${DEST_DIR}/lib/modules/${UNAME_R}"
-  MOD_DIR7="${DEST_DIR}/lib/modules/${UNAME_R7}"
-  mkdir -p ${SRC_DIR}
-  mkdir -p ${SRC_DIR7}
-  if [ ${DO_LINKS} = "true" ]; then
-    mkdir -p ${MOD_DIR}
-    mkdir -p ${MOD_DIR7}
-    ln -sv ${SRC_DIR}  ${MOD_DIR}/build
-    ln -sv ${SRC_DIR7} ${MOD_DIR7}/build
-  fi
-
-  # Get Module.symvers files
-  curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module.symvers  > ${SRC_DIR}/Module.symvers
-  curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module7.symvers > ${SRC_DIR7}/Module.symvers
+  for uname in "uname_string" "uname_string7"; do
+    UNAME_R+=($(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/${uname} | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g'))
+  done
+  info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
   # Get kernel sources
   info "Downloading kernel sources..."
   curl -L ${RASPI_URL}/${RASPI_COMMIT}.tar.gz > rpi-linux.tar.gz
-  info "Extracting kernel sources..."
-  tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR}
-  tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR7}
 
-  # Get .config files
-  info "Extracting .config files..."
-  curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko  > configs.ko
-  curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R7}/kernel/kernel/configs.ko > configs7.ko
-  ${SRC_DIR}/scripts/extract-ikconfig  configs.ko  > ${SRC_DIR}/.config
-  ${SRC_DIR7}/scripts/extract-ikconfig configs7.ko > ${SRC_DIR7}/.config
+  for r in ${UNAME_R[@]}; do
+    if [[ $r =~ -v7 ]]; then
+      SUFFIX="7"
+    else
+      SUFFIX=""
+    fi
 
-  # Prepare modules
-  for r in ${SRC_DIR} ${SRC_DIR7}; do
+    # Make directories and links
+    SRC_DIR="${DEST_DIR}/usr/src/$r"
+    MOD_DIR="${DEST_DIR}/lib/modules/$r"
+    mkdir -p ${SRC_DIR}
+    if [ ${DO_LINKS} = "true" ]; then
+      mkdir -p ${MOD_DIR}
+      ln -svf ${SRC_DIR}  ${MOD_DIR}/build
+    fi
+
+    # Get Module.symvers files
+    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${SUFFIX}.symvers > ${SRC_DIR}/Module.symvers
+
+    # Extract the sources
+    info "Extracting kernel sources..."
+    tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR}
+
+    # Get .config files
+    info "Extracting .config files..."
+    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko > configs.ko
+    ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+
+    # Prepare modules
     info "Preparing $r modules..."
     # Check if we need to cross compile
     if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
-      make -C $r LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} modules_prepare
+      make -C ${SRC_DIR} LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} modules_prepare
     else
-      make -C $r LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
+      make -C ${SRC_DIR} LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
     fi
     [ $? -eq 0 ] || die "make modules_prepare failed!"
   done
