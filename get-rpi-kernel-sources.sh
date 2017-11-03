@@ -25,11 +25,11 @@ die() {
 }
 
 usage() {
-  echo -e "Usage: $me -x=HASH [OPTIONS]
+  echo -e "Usage: $me [OPTIONS] HASH
 Download and prepare Raspberry Pi kernel sources for building out of kernel modules.
 
 Mandatory arguments:
-  -x, --hexxeh-commit=HASH  specify the Hexxeh commit hash of the kernel release to be downloaded
+  HASH   specify the Hexxeh commit hash of the kernel release to be downloaded
 
 Optional arguments:
   -d, --directory=DIR       store the sources in DIR, defaults to '/tmp'
@@ -106,7 +106,6 @@ eval set -- $args
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    -x | --hexxeh-commit) HEXXEH_COMMIT="$2"; shift 2 ;;
     -d | --directory)     DEST_DIR="$2"; shift 2 ;;
     -L | --local-version) LOCALVERSION="$2"; shift 2 ;;
     -E | --extra-version) EXTRAVERSION="$2"; shift 2 ;;
@@ -116,6 +115,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+HEXXEH_COMMIT=${@:$OPTIND:1}
+
 [[ ${HEXXEH_COMMIT} ]] || die "Can't proceed without Hexxeh commit hash. \
 Type '$me --help' to get usage information."
 
@@ -123,4 +124,3 @@ Type '$me --help' to get usage information."
 # Main
 cd /tmp
 get_sources
-
