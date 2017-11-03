@@ -11,6 +11,7 @@ RASPI_URL="https://github.com/raspberrypi/linux/archive"
 
 HEXXEH_COMMIT=
 DEST_DIR="/tmp"
+WORK_DIR="/tmp"
 
 LOCALVERSION=+
 DO_LINKS="true"
@@ -32,11 +33,12 @@ Mandatory arguments:
   HASH   specify the Hexxeh commit hash of the kernel release to be downloaded
 
 Optional arguments:
-  -d, --directory=DIR       store the sources in DIR, defaults to '/tmp'
-  -L, --local-version=VER   set make variable LOCALVERISON to VER, defaults to '+'
-  -E, --extra-version=VER   set make variable EXTRAVERSION to VER
-  -n, --no-links            skip making symbolic '/build' links
-      --help                display this help and exit
+  -d, --directory=DIR          store the sources in DIR, defaults to '/tmp'
+  -w, --working-directory=DIR  use DIR as working directory, defaults to '/tmp'
+  -L, --local-version=VER      set make variable LOCALVERISON to VER, defaults to '+'
+  -E, --extra-version=VER      set make variable EXTRAVERSION to VER
+  -n, --no-links               skip making symbolic '/build' links
+      --help                   display this help and exit
 "
 }
 
@@ -100,18 +102,19 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-args=$(getopt --name "$me" -o x:,d:,L:,E:,n -l hexxeh-commit:,directory:,local-version:,extra-version:,no-links,help -- "$@")
+args=$(getopt --name "$me" -o x:,d:,w:,L:,E:,n -l hexxeh-commit:,directory:,working-directory:,local-version:,extra-version:,no-links,help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    -d | --directory)     DEST_DIR="$2"; shift 2 ;;
-    -L | --local-version) LOCALVERSION="$2"; shift 2 ;;
-    -E | --extra-version) EXTRAVERSION="$2"; shift 2 ;;
-    -n | --no-links)      DO_LINKS="false"; shift ;;
-         --help)          usage; exit 0 ;;
-    --)                   shift; break ;;
+    -d | --directory)          DEST_DIR="$2";     shift 2 ;;
+    -w | --working-directory)  WORK_DIR="$2";     shift 2 ;;
+    -L | --local-version)      LOCALVERSION="$2"; shift 2 ;;
+    -E | --extra-version)      EXTRAVERSION="$2"; shift 2 ;;
+    -n | --no-links)           DO_LINKS="false";  shift ;;
+         --help)               usage; exit 0 ;;
+    --)                        shift; break ;;
   esac
 done
 
@@ -122,5 +125,5 @@ Type '$me --help' to get usage information."
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Main
-cd /tmp
+cd ${WORK_DIR}
 get_sources
