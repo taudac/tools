@@ -15,6 +15,8 @@ WORK_DIR="/tmp"
 
 LOCALVERSION=+
 DO_LINKS="true"
+DO_V6="true"
+DO_V7="true"
 
 info() {
   printf "${cgrn}$1${cend}\n"
@@ -37,6 +39,7 @@ Optional arguments:
   -w, --working-directory=DIR  use DIR as working directory, defaults to '/tmp'
   -L, --local-version=VER      set make variable LOCALVERISON to VER, defaults to '+'
   -E, --extra-version=VER      set make variable EXTRAVERSION to VER
+  -r, --release=VER            download release VER only, one of: 'v6', 'v7'
   -n, --no-links               skip making symbolic '/build' links
       --help                   display this help and exit
 "
@@ -62,9 +65,17 @@ get_sources() {
 
   for r in ${UNAME_R[@]}; do
     if [[ $r =~ -v7 ]]; then
-      SUFFIX="7"
+      if [ ${DO_V7} = "true" ]; then
+        SUFFIX="7"
+      else
+        continue
+      fi
     else
-      SUFFIX=""
+      if [ ${DO_V6} = "true" ]; then
+        SUFFIX=""
+      else
+        continue
+      fi
     fi
 
     # Make directories and links
@@ -110,8 +121,8 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-OPTIONS=d:,w:,L:,E:,n
-LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,no-links
+OPTIONS=d:,w:,L:,E:,r:,n
+LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,no-links
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
@@ -122,6 +133,7 @@ while [ $# -gt 0 ]; do
     -w | --working-directory)  WORK_DIR="$2";     shift 2 ;;
     -L | --local-version)      LOCALVERSION="$2"; shift 2 ;;
     -E | --extra-version)      EXTRAVERSION="$2"; shift 2 ;;
+    -r | --release)            DO_RELEASE="$2";   shift 2 ;;
     -n | --no-links)           DO_LINKS="false";  shift ;;
          --help)               usage; exit 0 ;;
     --)                        shift; break ;;
@@ -132,6 +144,12 @@ HEXXEH_COMMIT=${@:$OPTIND:1}
 
 [[ ${HEXXEH_COMMIT} ]] || die "Can't proceed without Hexxeh commit hash. \
 Type '$me --help' to get usage information."
+
+case "${DO_RELEASE}" in
+  "v7") DO_V6="false" ;;
+  "v6") DO_V7="false" ;;
+     *) die "Invalid release. Type '$me --help' to get usage information."
+esac
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Main
