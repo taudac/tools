@@ -14,6 +14,7 @@ DEST_DIR="/tmp"
 WORK_DIR="/tmp"
 
 LOCALVERSION=+
+CONFIG_MODE="module"
 DO_LINKS="true"
 DO_V6="true"
 DO_V7="true"
@@ -40,6 +41,10 @@ Optional arguments:
   -L, --local-version=VER      set make variable LOCALVERISON to VER, defaults to '+'
   -E, --extra-version=VER      set make variable EXTRAVERSION to VER
   -r, --release=VER            download release VER only, one of: 'v6', 'v7'
+  -c, --config=MODE            if MODE='module': get .config file from configs.ko module,
+                               if MODE='proc': get .config file from proc /proc/config.gz,
+                               if MODE='skip': skip getting .config file,
+                               defaults to 'module'
   -n, --no-links               skip making symbolic '/build' links
       --help                   display this help and exit
 "
@@ -96,10 +101,18 @@ get_sources() {
     tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR}
 
     # Get .config files
-    info "Extracting .config files..."
-    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko \
-      > configs.ko
-    ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+    case "${CONFIG_MODE}" in
+      "module")
+        info "Extracting .config file from 'configs.ko'"
+        curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko \
+          > configs.ko
+        ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+        ;;
+      "proc")
+        info "Extracting .config file from '/proc/config.gz'"
+        zcat /proc/config.gz > ${SRC_DIR}/.config
+        ;;
+    esac
 
     # Prepare modules
     info "Preparing $r modules..."
@@ -121,8 +134,8 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-OPTIONS=d:,w:,L:,E:,r:,n
-LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,no-links
+OPTIONS=d:,w:,L:,E:,r:,c:,n
+LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,config:,no-links
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
@@ -134,6 +147,7 @@ while [ $# -gt 0 ]; do
     -L | --local-version)      LOCALVERSION="$2"; shift 2 ;;
     -E | --extra-version)      EXTRAVERSION="$2"; shift 2 ;;
     -r | --release)            DO_RELEASE="$2";   shift 2 ;;
+    -c | --config)             CONFIG_MODE="$2";  shift 2 ;;
     -n | --no-links)           DO_LINKS="false";  shift ;;
          --help)               usage; exit 0 ;;
     --)                        shift; break ;;
@@ -149,6 +163,13 @@ case "${DO_RELEASE}" in
   "v7") DO_V6="false" ;;
   "v6") DO_V7="false" ;;
      *) die "Invalid release. Type '$me --help' to get usage information."
+esac
+
+case "${CONFIG_MODE}" in
+  "module") ;;
+  "proc")   ;;
+  "skip")   ;;
+  *)        die "Invalid config mode. Type '$me --help' to get usage information."
 esac
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
