@@ -97,7 +97,7 @@ get_sources() {
       > ${SRC_DIR}/Module.symvers
 
     # Extract the sources
-    info "Extracting kernel sources..."
+    info "Extracting $r kernel sources..."
     tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR}
 
     # Get .config files
