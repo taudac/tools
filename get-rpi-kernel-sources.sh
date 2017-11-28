@@ -137,3 +137,5 @@ Type '$me --help' to get usage information."
 # Main
 cd ${WORK_DIR}
 get_sources
+
+# vim: ts=2 sw=2 et
