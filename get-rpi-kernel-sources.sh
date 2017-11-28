@@ -110,8 +110,8 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-OPTIONS=x:,d:,w:,L:,E:,n
-LONG_OPTIONS=hexxeh-commit:,directory:,working-directory:,local-version:,extra-version:,no-links
+OPTIONS=d:,w:,L:,E:,n
+LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,no-links
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
 eval set -- $args
