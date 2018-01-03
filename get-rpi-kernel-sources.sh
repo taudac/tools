@@ -59,8 +59,16 @@ get_sources() {
 
   # Get the kernel release version
   for uname in "uname_string" "uname_string7"; do
-    UNAME_R+=($(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/${uname} \
-      | sed -r 's/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/\1/g'))
+    local release
+    release=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/${uname} \
+      | sed -r '/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}')
+    if [ $? -ne 0 ]; then
+      release="rpi-linux"
+      if [ ${uname} == "uname_string7" ]; then
+        release="${release}-v7"
+      fi
+    fi
+    UNAME_R+=(${release})
   done
   info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
