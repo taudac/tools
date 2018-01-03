@@ -8,7 +8,8 @@ REPO = 'rpi-firmware'
 
 def main(args):
     json_str = urllib2.urlopen(
-            "{}/{}/{}/commits".format(GITHUB_API_URL, USER, REPO)).read()
+            "{}/{}/{}/commits?per_page={}"
+            .format(GITHUB_API_URL, USER, REPO, args.max_count)).read()
     commits = json.loads(json_str)
 
     for c in commits:
@@ -16,5 +17,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--max-count", metavar="<number>",
+            help="print the number of commits")
     args = parser.parse_args()
     main(args)
