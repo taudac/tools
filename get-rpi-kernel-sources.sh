@@ -58,13 +58,13 @@ get_sources() {
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
   # Get the kernel release version
-  for uname in "uname_string" "uname_string7"; do
+  for v in "" "7"; do
     local release
-    release=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/${uname} \
+    release=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
       | sed -r '/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}')
     if [ $? -ne 0 ]; then
       release="rpi-linux"
-      if [ ${uname} == "uname_string7" ]; then
+      if [ $v == "7" ]; then
         release="${release}-v7"
       fi
     fi
