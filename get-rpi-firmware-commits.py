@@ -17,7 +17,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "--max-count", metavar="<number>",
-            help="print the number of commits")
+    parser.add_argument("-n", "--max-count", metavar="<number>", default=10,
+            help="print the number of commits, defaults to 10")
     args = parser.parse_args()
     main(args)
