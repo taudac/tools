@@ -167,11 +167,13 @@ HEXXEH_COMMIT=${@:$OPTIND:1}
 [[ ${HEXXEH_COMMIT} ]] || die "Can't proceed without Hexxeh commit hash. \
 Type '$me --help' to get usage information."
 
-case "${DO_RELEASE}" in
-  "v7") DO_V6="false" ;;
-  "v6") DO_V7="false" ;;
-     *) die "Invalid release. Type '$me --help' to get usage information."
-esac
+if [ -n "${DO_RELEASE}" ]; then
+  case "${DO_RELEASE}" in
+    "v7") DO_V6="false" ;;
+    "v6") DO_V7="false" ;;
+       *) die "Invalid release. Type '$me --help' to get usage information."
+  esac
+fi
 
 case "${CONFIG_MODE}" in
   "module") ;;
