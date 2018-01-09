@@ -112,7 +112,7 @@ get_sources() {
     case "${CONFIG_MODE}" in
       "module")
         info "Extracting .config file from 'configs.ko'"
-        curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${UNAME_R}/kernel/kernel/configs.ko \
+        curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/$r/kernel/kernel/configs.ko \
           > configs.ko
         ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
         ;;
