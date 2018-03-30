@@ -81,7 +81,7 @@ def main(cross_compile_args=""):
         return
 
     # download sources and build modules for each new kernel
-    for sha, kver in pending:
+    for sha, kver in sorted(pending, key=lambda x: x[1]):
         # download
         subprocess.check_call(["./get-rpi-kernel-sources.sh", sha])
         # remove old modules
