@@ -106,7 +106,7 @@ get_sources() {
 
     # Extract the sources
     info "Extracting $r kernel sources to ${SRC_DIR} ..."
-    tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR}
+    tar --strip-components 1 -xf rpi-linux.tar.gz --checkpoint=.200 --totals -C ${SRC_DIR}
 
     # Get .config files
     case "${CONFIG_MODE}" in
