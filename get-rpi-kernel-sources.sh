@@ -73,7 +73,7 @@ get_sources() {
   info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
   # Get kernel sources
-  info "Downloading kernel sources..."
+  info "Downloading kernel sources to $(pwd) ..."
   curl -L ${RASPI_URL}/${RASPI_COMMIT}.tar.gz > rpi-linux.tar.gz
 
   for r in ${UNAME_R[@]}; do
@@ -105,7 +105,7 @@ get_sources() {
       > ${SRC_DIR}/Module.symvers
 
     # Extract the sources
-    info "Extracting $r kernel sources..."
+    info "Extracting $r kernel sources to ${SRC_DIR} ..."
     tar --strip-components 1 -xf rpi-linux.tar.gz -C ${SRC_DIR}
 
     # Get .config files
