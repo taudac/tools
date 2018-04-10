@@ -80,6 +80,9 @@ def main(cross_compile_args=""):
         print "Up-to-date with latest 'Hexxeh' kernel"
         return
 
+    if not query_yes_no("Do you want to build new modules?"):
+        return
+
     # download sources and build modules for each new kernel
     for sha, kver in sorted(pending, key=lambda x: x[1]):
         # download
