@@ -83,6 +83,10 @@ def main(cross_compile_args=""):
     if not query_yes_no("Do you want to build new modules?"):
         return
 
+    print "Updating working directory..."
+    git_args = shlex.split(git_cmd + "pull --ff-only")
+    subprocess.check_call(git_args)
+
     # download sources and build modules for each new kernel
     for sha, kver in sorted(pending, key=lambda x: x[1]):
         # download
