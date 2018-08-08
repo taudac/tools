@@ -31,7 +31,7 @@ class GitHubRepo:
                     .format(self.GITHUB_API_URL, self.user, self.project,
                             max_count, revision)).read()
             commits = json.loads(json_str)
-        except urllib2.HTTPError as e:
+        except (urllib2.HTTPError, urllib2.URLError) as e:
             print e
             return
 
