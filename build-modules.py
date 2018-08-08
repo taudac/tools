@@ -61,7 +61,12 @@ def main(cross_compile_args=""):
     git_cmd = "git -C ../modules/ "
 
     # get latest supported kernel version
-    ckver = re.match(r'taudac-.* for ([\d\.]+)', taudac.log(1)[0][1]).group(1)
+    last_commit = taudac.log(1)
+    if last_commit is None:
+        print "Failed reading taudac log!"
+        return
+
+    ckver = re.match(r'taudac-.* for ([\d\.]+)', last_commit[0][1]).group(1)
     print "Latest supported kernel is {}".format(ckver)
 
     # check if newer kernels are available
