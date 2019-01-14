@@ -7,11 +7,12 @@ CROSS_COMPILE_ARGS = "ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-"
 CROSS_COMPILE_PATH = os.path.expanduser("~") + "/src/raspberrypi"\
         "/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/"
 
+
 class GitHubRepo:
     def __init__(self, user, project):
         self.GITHUB_API_URL = 'https://api.github.com/repos'
-        self.user = user;
-        self.project = project;
+        self.user = user
+        self.project = project
 
     def __iter__(self):
         self.n = 0
@@ -41,19 +42,21 @@ class GitHubRepo:
                     (c['sha'][0:8], c['commit']['message'].split('\n')[0]))
         return messages
 
+
 def query_yes_no(question):
-    yes = {'yes','y',''}
-    no = {'no','n'}
+    yes = {'yes', 'y', ''}
+    no = {'no', 'n'}
 
     print "{} [Y/n]".format(question),
     while True:
         choice = raw_input().lower()
         if choice in yes:
-           return True
+            return True
         elif choice in no:
-           return False
+            return False
         else:
-           print "Please respond with 'yes' or 'no'"
+            print "Please respond with 'yes' or 'no'"
+
 
 def main(cross_compile_args=""):
     hexxeh = GitHubRepo("Hexxeh", "rpi-firmware")
@@ -125,6 +128,7 @@ def main(cross_compile_args=""):
             subprocess.check_call(git_args)
             git_args.append("--tags")
             subprocess.check_call(git_args)
+
 
 if __name__ == '__main__':
     # check if we need to cross compile
