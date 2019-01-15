@@ -1,7 +1,10 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
+
 import argparse
-import urllib2, json, re
+import json, re
 import os, subprocess, shlex
+from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 
 IS_RASPI_RE = r'arm(v[6-7](l|hf))$'
 CROSS_COMPILE_ARGS = "ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-"
@@ -19,7 +22,7 @@ class GitHubRepo:
         self.n = 0
         return self
 
-    def next(self):
+    def __next__(self):
         ret = self.log(max_count=1, revision="HEAD~{}".format(self.n))
         if ret is not None:
             self.n += 1
@@ -29,12 +32,12 @@ class GitHubRepo:
 
     def log(self, max_count=10, revision="HEAD"):
         try:
-            json_str = urllib2.urlopen("{}/{}/{}/commits?per_page={}&sha={}"
+            json_str = urlopen("{}/{}/{}/commits?per_page={}&sha={}"
                     .format(self.GITHUB_API_URL, self.user, self.project,
                             max_count, revision)).read()
-            commits = json.loads(json_str)
-        except (urllib2.HTTPError, urllib2.URLError) as e:
-            print e
+            commits = json.loads(json_str.decode('utf-8'))
+        except (HTTPError, URLError) as e:
+            print(e)
             return
 
         messages = []
@@ -51,15 +54,15 @@ def query_yes_no(question):
     yes = {'yes', 'y', ''}
     no = {'no', 'n'}
 
-    print "{} [Y/n]".format(question),
+    print("{} [Y/n] ".format(question), end='')
     while True:
-        choice = raw_input().lower()
+        choice = input().lower()
         if choice in yes:
             return True
         elif choice in no:
             return False
         else:
-            print "Please respond with 'yes' or 'no'"
+            print("Please respond with 'yes' or 'no' ", end='')
 
 
 def main(cross_compile_args=""):
@@ -70,11 +73,11 @@ def main(cross_compile_args=""):
     # get latest supported kernel version
     last_commit = taudac.log(1)
     if last_commit is None:
-        print "Failed reading taudac log!"
+        print("Failed reading taudac log!")
         return
 
     ckver = re.match(r'taudac-.* for ([\d\.]+)', last_commit[0][1]).group(1)
-    print "Latest supported kernel is {}".format(ckver)
+    print("Latest supported kernel is {}".format(ckver))
 
     # check if newer kernels are available
     pending = []
@@ -85,17 +88,17 @@ def main(cross_compile_args=""):
             if nkver == ckver:
                 break
             else:
-                print "New kernel available: {}".format(nkver)
+                print("New kernel available: {}".format(nkver))
                 pending.append((c[0], nkver))
 
     if not pending:
-        print "Up-to-date with latest 'Hexxeh' kernel"
+        print("Up-to-date with latest 'Hexxeh' kernel")
         return
 
     if not query_yes_no("Do you want to build new modules?"):
         return
 
-    print "Updating working directory..."
+    print("Updating working directory...")
     git_args = shlex.split(git_cmd + "pull --ff-only")
     subprocess.check_call(git_args)
 
@@ -136,7 +139,7 @@ def main(cross_compile_args=""):
 
 if __name__ == '__main__':
     # parse arguments
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-y', '--yes', '--assume-yes',
             dest='assume_yes', action='store_true',
             help='assume "yes" as answer to all prompts and run non-interactively')
@@ -144,7 +147,7 @@ if __name__ == '__main__':
 
     # check if we need to cross compile
     machine = subprocess.check_output("uname -m", shell=True)
-    if re.match(IS_RASPI_RE, machine) is not None:
+    if re.match(IS_RASPI_RE, machine.decode('utf-8')) is not None:
         main()
     else:
         os.environ["PATH"] += os.pathsep + os.path.abspath(CROSS_COMPILE_PATH)
