@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+import argparse
 import urllib2, json, re
 import os, subprocess, shlex
 
@@ -44,6 +45,9 @@ class GitHubRepo:
 
 
 def query_yes_no(question):
+    if args.assume_yes:
+        return True
+
     yes = {'yes', 'y', ''}
     no = {'no', 'n'}
 
@@ -131,6 +135,13 @@ def main(cross_compile_args=""):
 
 
 if __name__ == '__main__':
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-y', '--yes', '--assume-yes',
+            dest='assume_yes', action='store_true',
+            help='assume "yes" as answer to all prompts and run non-interactively')
+    args = parser.parse_args()
+
     # check if we need to cross compile
     machine = subprocess.check_output("uname -m", shell=True)
     if re.match(IS_RASPI_RE, machine) is not None:
