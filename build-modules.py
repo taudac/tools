@@ -6,6 +6,11 @@ import os, subprocess, shlex
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+
 IS_RASPI_RE = r'arm(v[6-7](l|hf))$'
 CROSS_COMPILE_ARGS = "ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-"
 CROSS_COMPILE_PATH = os.path.expanduser("~") + "/src/raspberrypi"\
@@ -45,6 +50,23 @@ class GitHubRepo:
             messages.append(
                     (c['sha'][0:8], c['commit']['message'].split('\n')[0]))
         return messages
+
+
+def send_email(kver):
+    msg = MIMEMultipart()
+    msg['From'] = args.sender
+    msg['To'] = args.recipient
+    msg['Subject'] = "TauDAC modules for kernel {}".format(kver)
+
+    text = "TauDAC modules for kernel version {} have been built.".format(kver)
+    msg.attach(MIMEText(text, 'plain'))
+
+    print("Sending email...")
+    server = smtplib.SMTP(args.smtp_server, args.smtp_server_port)
+    server.starttls()
+    server.login(args.smtp_user, args.smtp_pass)
+    server.send_message(msg)
+    server.quit()
 
 
 def query_yes_no(question):
@@ -135,6 +157,9 @@ def main(cross_compile_args=""):
             subprocess.check_call(git_args)
             git_args.append("--tags")
             subprocess.check_call(git_args)
+        # send notification email
+        if args.command == 'email':
+            send_email(kver)
 
 
 if __name__ == '__main__':
@@ -143,6 +168,28 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--yes', '--assume-yes',
             dest='assume_yes', action='store_true',
             help='assume "yes" as answer to all prompts and run non-interactively')
+
+    subparsers = parser.add_subparsers(dest='command')
+    email_parser = subparsers.add_parser('email',
+            help='send notification email if new modules have been built')
+    email_parser.add_argument('--to', metavar='<address>',
+            required=True, dest='recipient',
+            help='the recipient email address')
+    email_parser.add_argument('--from', metavar='<address>',
+            required=True, dest='sender',
+            help='the sender email address')
+    email_parser.add_argument('-u', '--smtp-user', metavar='<username>',
+            required=True,
+            help='username for SMTP server login')
+    email_parser.add_argument('-p', '--smtp-pass', metavar='<password>',
+            required=True,
+            help='password for SMTP server login')
+    email_parser.add_argument('-S', '--smtp-server', metavar='<host>',
+            required=True,
+            help='the outgoing SMTP server to use')
+    email_parser.add_argument('-P', '--smtp-server-port', metavar='<port>',
+            default=587,
+            help='the outgoing SMTP server port, defaults to 587')
     args = parser.parse_args()
 
     # check if we need to cross compile
