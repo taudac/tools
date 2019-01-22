@@ -52,14 +52,12 @@ class GitHubRepo:
         return messages
 
 
-def send_email(kver):
+def send_email(subject='', body=''):
     msg = MIMEMultipart()
     msg['From'] = args.sender
     msg['To'] = args.recipient
-    msg['Subject'] = "TauDAC modules for kernel {}".format(kver)
-
-    text = "TauDAC modules for kernel version {} have been built.".format(kver)
-    msg.attach(MIMEText(text, 'plain'))
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
 
     print("Sending email...")
     server = smtplib.SMTP(args.smtp_server, args.smtp_server_port)
@@ -159,8 +157,9 @@ def main(cross_compile_args=""):
             subprocess.check_call(git_args)
         # send notification email
         if args.command == 'email':
-            send_email(kver)
-
+            send_email(subject="TauDAC modules for kernel {}".format(kver),
+                    text="TauDAC modules for kernel version {} have been built."
+                    .format(kver) )
 
 if __name__ == '__main__':
     # parse arguments
