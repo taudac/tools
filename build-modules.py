@@ -191,10 +191,19 @@ if __name__ == '__main__':
             help='the outgoing SMTP server port, defaults to 587')
     args = parser.parse_args()
 
-    # check if we need to cross compile
-    machine = subprocess.check_output("uname -m", shell=True)
-    if re.match(IS_RASPI_RE, machine.decode('utf-8')) is not None:
-        main()
-    else:
-        os.environ["PATH"] += os.pathsep + os.path.abspath(CROSS_COMPILE_PATH)
-        main(CROSS_COMPILE_ARGS)
+    try:
+        # check if we need to cross compile
+        machine = subprocess.check_output("uname -m", shell=True)
+        if re.match(IS_RASPI_RE, machine.decode('utf-8')) is not None:
+            main()
+        else:
+            os.environ["PATH"] += os.pathsep + os.path.abspath(CROSS_COMPILE_PATH)
+            main(CROSS_COMPILE_ARGS)
+    except subprocess.CalledProcessError as e:
+        note = ("command '{}' returned error code {}"
+                .format(" ".join(e.cmd), e.returncode))
+        print(note)
+        # send notification email
+        if args.command == 'email':
+            send_email("Building TauDAC modules failed", note)
+
