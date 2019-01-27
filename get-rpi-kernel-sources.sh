@@ -107,9 +107,9 @@ get_sources() {
     # Extract the sources
     info "Extracting $r kernel sources to ${SRC_DIR} ..."
     if [ -x "$(command -v pv)" ]; then
-        pv rpi-linux.tar.gz | tar --strip-components=1 -xzf - --totals -C ${SRC_DIR}
+        pv rpi-linux.tar.gz | bsdtar --strip-components=1 -xf - -C ${SRC_DIR}
     else
-        tar --strip-components=1 -xzf rpi-linux.tar.gz --checkpoint=.200 --totals -C ${SRC_DIR}
+        bsdtar --strip-components=1 -xvf rpi-linux.tar.gz -C ${SRC_DIR}
     fi
     [ $? -eq 0 ] || die "Extracting kernel sources failed!"
 
@@ -171,6 +171,8 @@ HEXXEH_COMMIT=${@:$OPTIND:1}
 
 [[ ${HEXXEH_COMMIT} ]] || die "Can't proceed without Hexxeh commit hash. \
 Type '$me --help' to get usage information."
+
+[[ -x "$(command -v bsdtar)" ]] || die "Could not find required program 'bsdtar'. Exiting..."
 
 if [ -n "${DO_RELEASE}" ]; then
   case "${DO_RELEASE}" in
