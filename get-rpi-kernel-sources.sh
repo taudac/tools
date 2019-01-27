@@ -106,7 +106,11 @@ get_sources() {
 
     # Extract the sources
     info "Extracting $r kernel sources to ${SRC_DIR} ..."
-    tar --strip-components 1 -xf rpi-linux.tar.gz --checkpoint=.200 --totals -C ${SRC_DIR}
+    if [ -x "$(command -v pv)" ]; then
+        pv rpi-linux.tar.gz | tar --strip-components=1 -xzf - --totals -C ${SRC_DIR}
+    else
+        tar --strip-components=1 -xzf rpi-linux.tar.gz --checkpoint=.200 --totals -C ${SRC_DIR}
+    fi
     [ $? -eq 0 ] || die "Extracting kernel sources failed!"
 
     # Get .config files
