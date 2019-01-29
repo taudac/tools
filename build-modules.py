@@ -217,3 +217,4 @@ if __name__ == '__main__':
         if args.command == 'email':
             send_email("Building TauDAC modules failed", note)
 
+# vim: ts=4 sw=4 sts=4 et
