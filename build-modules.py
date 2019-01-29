@@ -125,7 +125,12 @@ def main(cross_compile_args=""):
     # download sources and build modules for each new kernel
     for sha, kver in sorted(pending, key=lambda x: x[1]):
         # download
-        subprocess.check_call(["./get-rpi-kernel-sources.sh", sha])
+        gks_args = ["./get-rpi-kernel-sources.sh", sha]
+        if args.directory is not None:
+            gks_args.insert(1, "-d{}".format(' '.join(args.directory)))
+        if args.working_directory is not None:
+            gks_args.insert(1, "-w{}".format(' '.join(args.working_directory)))
+        subprocess.check_call(gks_args)
         # remove old modules
         subprocess.check_call("rm -r ../modules/lib", shell=True)
         # launch make
@@ -167,6 +172,10 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--yes', '--assume-yes',
             dest='assume_yes', action='store_true',
             help='assume "yes" as answer to all prompts and run non-interactively')
+    parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*',
+            help='store the sources in DIR, defaults to "/tmp"')
+    parser.add_argument('-w', '--working-directory', metavar='<DIR>',
+            help='use DIR as working directory, defaults to "/tmp"')
 
     subparsers = parser.add_subparsers(dest='command')
     email_parser = subparsers.add_parser('email',
