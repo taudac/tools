@@ -147,7 +147,7 @@ get_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-OPTIONS=d:,w:,L:,E:,r:,c:,n
+OPTIONS=d::,w::,L::,E::,r:,c:,n
 LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,config:,no-links
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
