@@ -177,7 +177,8 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--working-directory', metavar='<DIR>',
             help='use DIR as working directory, defaults to "/tmp"')
 
-    subparsers = parser.add_subparsers(dest='command')
+    # sub command email
+    subparsers = parser.add_subparsers(dest='command', metavar='<command>')
     email_parser = subparsers.add_parser('email',
             help='send notification email if new modules have been built')
     email_parser.add_argument('--to', metavar='<address>',
