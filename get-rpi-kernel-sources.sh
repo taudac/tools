@@ -53,8 +53,9 @@ Optional arguments:
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
-  [[ ${RASPI_COMMIT} =~ [0-9a-f]{40} ]] \
-    || die "Can't find Raspberry Pi commit hash!"
+  if [[ ! ${RASPI_COMMIT} =~ [0-9a-f]{40} ]]; then
+    die "Can't find Raspberry Pi commit hash!"
+  fi
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
   # Get the kernel release version
