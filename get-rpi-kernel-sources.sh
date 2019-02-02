@@ -52,7 +52,7 @@ Optional arguments:
 
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
-  RASPI_COMMIT=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
+  RASPI_COMMIT=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
   if [[ ! ${RASPI_COMMIT} =~ [0-9a-f]{40} ]]; then
     die "Can't find Raspberry Pi commit hash!"
   fi
@@ -61,7 +61,7 @@ get_sources() {
   # Get the kernel release version
   for v in "" "7"; do
     local release
-    release=$(curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
+    release=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
       | sed -r '/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}')
     if [ $? -ne 0 ]; then
       release="rpi-linux"
@@ -75,7 +75,8 @@ get_sources() {
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
-  curl -L ${RASPI_URL}/${RASPI_COMMIT}.tar.gz > rpi-linux.tar.gz
+  wget -nv --show-progress -O rpi-linux.tar.gz \
+      ${RASPI_URL}/${RASPI_COMMIT}.tar.gz
 
   for r in ${UNAME_R[@]}; do
     if [[ $r =~ -v7 ]]; then
@@ -102,8 +103,8 @@ get_sources() {
     fi
 
     # Get Module.symvers files
-    curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${SUFFIX}.symvers \
-      > ${SRC_DIR}/Module.symvers
+    wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
+        ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${SUFFIX}.symvers
 
     # Extract the sources
     info "Extracting $r kernel sources to ${SRC_DIR} ..."
@@ -118,8 +119,8 @@ get_sources() {
     case "${CONFIG_MODE}" in
       "module")
         info "Extracting .config file from 'configs.ko'"
-        curl -L ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/$r/kernel/kernel/configs.ko \
-          > configs.ko
+        wget -nv --show-progress -O configs.ko \
+            ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/$r/kernel/kernel/configs.ko
         ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
         ;;
       "proc")
