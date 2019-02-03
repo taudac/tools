@@ -171,7 +171,7 @@ prepare_sources() {
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
-OPTIONS=d::,w::,L::,E::,r:,c:,n
+OPTIONS=d::,w::,L::,E::,r:,c:,n,h
 LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,config:,no-links
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
@@ -186,7 +186,7 @@ while [ $# -gt 0 ]; do
     -r | --release)            DO_RELEASE="$2";   shift 2 ;;
     -c | --config)             CONFIG_MODE="$2";  shift 2 ;;
     -n | --no-links)           DO_LINKS="false";  shift ;;
-         --help)               usage; exit 0 ;;
+    -h | --help)               usage; exit 0 ;;
     --)                        shift; break ;;
   esac
 done
