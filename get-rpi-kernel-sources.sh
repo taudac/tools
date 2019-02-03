@@ -50,6 +50,8 @@ Optional arguments:
 "
 }
 
+## @brief      Downloads kernel sources and appends release names to UNAME_R
+## @param[out] UNAME_R Array holding the release names
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
@@ -71,79 +73,99 @@ get_sources() {
     fi
     UNAME_R+=(${release})
   done
-  info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
   wget -nv --show-progress -O rpi-linux.tar.gz \
       ${RASPI_URL}/${RASPI_COMMIT}.tar.gz
+}
 
-  for r in ${UNAME_R[@]}; do
-    if [[ $r =~ -v7 ]]; then
-      if [ ${DO_V7} = "true" ]; then
-        SUFFIX="7"
-      else
-        continue
-      fi
-    else
-      if [ ${DO_V6} = "true" ]; then
-        SUFFIX=""
-      else
-        continue
-      fi
-    fi
+## @brief      Creates the kernel sources directory
+## @param[in]  $1 Relase name
+## @param[in]  DEST_DIR The path prefix
+## @param[in]  DO_LINKS If 'true', creates the 'build' link
+## @param[out] SRC_DIR Kernel sources directory path
+## @param[out] MOD_DIR Kernel modules directory path
+make_dirs() {
+  local uname_r=$1
+  # Make directories and links
+  SRC_DIR="${DEST_DIR}/usr/src/${uname_r}"
+  MOD_DIR="${DEST_DIR}/lib/modules/${uname_r}"
+  mkdir -vp ${SRC_DIR}
+  if [ ${DO_LINKS} = "true" ]; then
+    mkdir -vp ${MOD_DIR}
+    ln -svf ${SRC_DIR}  ${MOD_DIR}/build
+  fi
+}
 
-    # Make directories and links
-    SRC_DIR="${DEST_DIR}/usr/src/$r"
-    MOD_DIR="${DEST_DIR}/lib/modules/$r"
-    mkdir -p ${SRC_DIR}
-    if [ ${DO_LINKS} = "true" ]; then
-      mkdir -p ${MOD_DIR}
-      ln -svf ${SRC_DIR}  ${MOD_DIR}/build
-    fi
+## @brief      Extracts sources to the kernel sources directory
+## @param[in]  $1 Relase name
+## @param[in]  SRC_DIR Kernel sources directory path
+extract_sources() {
+  local uname_r=$1
+  # Extract the sources
+  info "Extracting ${uname_r} kernel sources to ${SRC_DIR} ..."
+  if [[ -x "$(command -v pv)" ]]; then
+      pv rpi-linux.tar.gz | bsdtar --strip-components=1 -xf - -C ${SRC_DIR}
+  else
+      bsdtar --strip-components=1 -xvf rpi-linux.tar.gz -C ${SRC_DIR}
+  fi
+  [[ $? -eq 0 ]] || die "Extracting kernel sources failed!"
+}
 
-    # Get Module.symvers files
-    wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
-        ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${SUFFIX}.symvers
+## @brief      Creates the kernel .config file
+## @param[in]  $1 Relase name
+## @param[in]  CONFIG_MODE See --config
+## @param[in]  SRC_DIR Kernel sources directory path
+get_config() {
+  local uname_r=$1
+  # Get .config files
+  case "${CONFIG_MODE}" in
+    "module")
+      info "Extracting .config file from 'configs.ko'"
+      wget -nv --show-progress -O configs.ko \
+          ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko
+      ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+      ;;
+    "proc")
+      info "Extracting .config file from '/proc/config.gz'"
+      zcat /proc/config.gz > ${SRC_DIR}/.config
+      ;;
+  esac
+}
 
-    # Extract the sources
-    info "Extracting $r kernel sources to ${SRC_DIR} ..."
-    if [ -x "$(command -v pv)" ]; then
-        pv rpi-linux.tar.gz | bsdtar --strip-components=1 -xf - -C ${SRC_DIR}
-    else
-        bsdtar --strip-components=1 -xvf rpi-linux.tar.gz -C ${SRC_DIR}
-    fi
-    [ $? -eq 0 ] || die "Extracting kernel sources failed!"
+## @brief      Downloads the Module.symvers file
+## @param[in]  $1 Relase name
+## @param[in]  SRC_DIR Kernel sources directory path
+get_symvers() {
+  local uname_r=$1
+  local suffix
+  [[ ${uname_r} =~ -v7 ]] && suffix="7"
 
-    # Get .config files
-    case "${CONFIG_MODE}" in
-      "module")
-        info "Extracting .config file from 'configs.ko'"
-        wget -nv --show-progress -O configs.ko \
-            ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/$r/kernel/kernel/configs.ko
-        ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
-        ;;
-      "proc")
-        info "Extracting .config file from '/proc/config.gz'"
-        zcat /proc/config.gz > ${SRC_DIR}/.config
-        ;;
-    esac
+  # Get Module.symvers files
+  info "Downloading Module.symvers file for kernel ${uname_r}"
+  wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
+      ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${suffix}.symvers
+}
 
-    # Prepare modules
-    info "Preparing $r modules..."
-    # Check if we need to cross compile
-    if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
-      make -C ${SRC_DIR} \
-        LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
-        modules_prepare
-    else
-      make -C ${SRC_DIR} \
-        LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
-        ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
-    fi
-    [ $? -eq 0 ] || die "make modules_prepare failed!"
-  done
-
+## @brief      Prepares the sources for building kernel modules
+## @param[in]  $1 Relase name
+## @param[in]  SRC_DIR Kernel sources directory path
+prepare_sources() {
+  local uname_r=$1
+  # Prepare modules
+  info "Preparing ${uname_r} modules..."
+  # Check if we need to cross compile
+  if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
+    make -C ${SRC_DIR} \
+      LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
+      modules_prepare
+  else
+    make -C ${SRC_DIR} \
+      LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
+      ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
+  fi
+  [[ $? -eq 0 ]] || die "make modules_prepare failed!"
   info "\nDone, you can now build kernel modules"
 }
 
@@ -195,5 +217,20 @@ esac
 # Main
 cd ${WORK_DIR}
 get_sources
+
+info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
+
+for r in ${UNAME_R[@]}; do
+  if [[ $r =~ -v7 ]]; then
+    [[ ${DO_V7} = "true" ]] || continue
+  else
+    [[ ${DO_V6} = "true" ]] || continue
+  fi
+  make_dirs       $r
+  extract_sources $r
+  get_config      $r
+  get_symvers     $r
+  prepare_sources $r
+done
 
 # vim: ts=2 sw=2 et
