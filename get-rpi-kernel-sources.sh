@@ -94,7 +94,7 @@ make_dirs() {
   mkdir -vp ${SRC_DIR}
   if [ ${DO_LINKS} = "true" ]; then
     mkdir -vp ${MOD_DIR}
-    ln -svf ${SRC_DIR}  ${MOD_DIR}/build
+    ln -svfn ${SRC_DIR} ${MOD_DIR}/build
   fi
 }
 
