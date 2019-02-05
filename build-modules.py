@@ -211,7 +211,7 @@ if __name__ == '__main__':
             main(CROSS_COMPILE_ARGS)
     except subprocess.CalledProcessError as e:
         note = ("command '{}' returned error code {}"
-                .format(" ".join(e.cmd), e.returncode))
+                .format(" ".join(str(v) for v in e.cmd), e.returncode))
         print(note)
         # send notification email
         if args.command == 'email':
