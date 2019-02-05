@@ -132,7 +132,7 @@ def main(cross_compile_args=""):
             gks_args.insert(1, "-w{}".format(' '.join(args.working_directory)))
         subprocess.check_call(gks_args)
         # remove old modules
-        subprocess.check_call("rm -r ../modules/lib", shell=True)
+        subprocess.check_call("rm -rf ../modules/lib", shell=True)
         # launch make
         for pver in ["", "-v7"]:
             make_args = shlex.split("make -C ../taudac-driver-dkms/src/ "
