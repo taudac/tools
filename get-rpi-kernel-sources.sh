@@ -25,6 +25,7 @@ info() {
 
 die() {
   [[ $1 ]] && printf "${cred}ERROR: $1${cend}\n" >&2
+  [[ $2 ]] && printf "$2\n"
   exit 1
 }
 
@@ -50,6 +51,8 @@ Optional arguments:
 "
 }
 
+USAGE_HINT="Type '$me --help' to get usage information."
+
 ## @brief      Downloads kernel sources and appends release names to UNAME_R
 ## @param[out] UNAME_R Array holding the release names
 get_sources() {
@@ -73,6 +76,8 @@ get_sources() {
     fi
     UNAME_R+=(${release})
   done
+
+  info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
@@ -174,7 +179,7 @@ prepare_sources() {
 OPTIONS=d::,w::,L::,E::,r:,c:,n,h
 LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,config:,no-links
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
-[ $? -eq 0 ] || die "Wrong options. Type '$me --help' to get usage information."
+[[ $? -eq 0 ]] || die "Wrong options." "${USAGE_HINT}"
 eval set -- $args
 
 while [ $# -gt 0 ]; do
@@ -193,16 +198,19 @@ done
 
 HEXXEH_COMMIT=${@:$OPTIND:1}
 
-[[ ${HEXXEH_COMMIT} ]] || die "Can't proceed without Hexxeh commit hash. \
-Type '$me --help' to get usage information."
+if [[ ! ${HEXXEH_COMMIT} ]]; then
+  die "Can't proceed without Hexxeh commit hash." "${USAGE_HINT}"
+fi
 
-[[ -x "$(command -v bsdtar)" ]] || die "Could not find required program 'bsdtar'. Exiting..."
+if [[ ! -x "$(command -v bsdtar)" ]]; then
+  die "Could not find required program 'bsdtar'. Exiting..."
+fi
 
 if [ -n "${DO_RELEASE}" ]; then
   case "${DO_RELEASE}" in
     "v7") DO_V6="false" ;;
     "v6") DO_V7="false" ;;
-       *) die "Invalid release. Type '$me --help' to get usage information."
+       *) die "Invalid release." "${USAGE_HINT}"
   esac
 fi
 
@@ -210,7 +218,7 @@ case "${CONFIG_MODE}" in
   "module") ;;
   "proc")   ;;
   "skip")   ;;
-  *)        die "Invalid config mode. Type '$me --help' to get usage information."
+  *)        die "Invalid config mode." "${USAGE_HINT}"
 esac
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,7 +226,6 @@ esac
 cd ${WORK_DIR}
 get_sources
 
-info "Release names are ${UNAME_R[0]} and ${UNAME_R[1]}"
 
 for r in ${UNAME_R[@]}; do
   if [[ $r =~ -v7 ]]; then
