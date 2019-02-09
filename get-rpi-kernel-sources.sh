@@ -8,6 +8,7 @@ cend='\033[0m'
 
 HEXXEN_URL="https://github.com/Hexxeh/rpi-firmware/raw"
 RASPI_URL="https://github.com/raspberrypi/linux/archive"
+PCP_URL="https://repo.picoreplayer.org/repo"
 
 HEXXEH_COMMIT=
 DEST_DIR="/tmp"
@@ -49,12 +50,49 @@ Optional arguments:
                                if MODE='proc': get .config file from proc /proc/config.gz,
                                if MODE='skip': skip getting .config file,
                                defaults to 'module'
+      --distro=NAME            download and prepare sources for distro NAME
+      --pcp-core=VER           if distro is 'pcp', set core version to VER, eg. '9.x'
+      --pcp-rt                 if distro is 'pcp', prepare sources for 'Realtime' version
   -n, --no-links               skip making symbolic '/build' links
   -h, --help                   display this help and exit
 "
 }
 
 USAGE_HINT="Type '$me --help' to get usage information."
+
+## @brief      Sets global variables for building piCorePlayer modules
+## @param[in]  $1 Relase name
+## @param[out] PCP_UNAME_R piCorePlayer release name
+## @param[out] PCP_URL_REFIX piCorePlayer repo url prefix
+set_pcp_vars() {
+  local uname_r=$1
+  local pcp_core_version=${PCP_CORE_VERSION}
+  local release=$(echo ${uname_r} | sed -r 's/[+-].*//')
+
+  local armv
+  local armv_suffix
+  if [[ ${uname_r} =~ -v7 ]]; then
+    armv="armv7"
+    armv_suffix="_v7"
+  else
+    armv="armv6"
+  fi
+
+  local pcp_version
+  local pcp_rt_suffix
+  if [[ ${PCP_RT} = "true" ]]; then
+    pcp_version="pcpAudioCore"
+    pcp_rt_suffix="-rt"
+  else
+    pcp_version="pcpCore"
+  fi
+
+  PCP_UNAME_R=${release}-${pcp_version}${armv_suffix}${pcp_rt_suffix}
+
+  PCP_URL_REFIX=${PCP_URL}
+  PCP_URL_REFIX+="/$pcp_core_version/$armv/releases/RPi/src/kernel"
+  PCP_URL_REFIX+="/${PCP_UNAME_R}_"
+}
 
 ## @brief      Downloads kernel sources and appends release names to UNAME_R
 ## @param[out] UNAME_R Array holding the release names
@@ -124,20 +162,30 @@ extract_sources() {
 ## @brief      Creates the kernel .config file
 ## @param[in]  $1 Relase name
 ## @param[in]  CONFIG_MODE See --config
+## @param[in]  DISTRO See --distro
 ## @param[in]  SRC_DIR Kernel sources directory path
 get_config() {
   local uname_r=$1
   # Get .config files
-  case "${CONFIG_MODE}" in
-    "module")
-      info "Extracting .config file from 'configs.ko'"
-      wget -nv --show-progress -O configs.ko \
-          ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko
-      ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+  case "${DISTRO}" in
+    "")
+      case "${CONFIG_MODE}" in
+        "module")
+          info "Extracting .config file from 'configs.ko'"
+          wget -nv --show-progress -O configs.ko \
+              ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko
+          ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+          ;;
+        "proc")
+          info "Extracting .config file from '/proc/config.gz'"
+          zcat /proc/config.gz > ${SRC_DIR}/.config
+          ;;
+      esac
       ;;
-    "proc")
-      info "Extracting .config file from '/proc/config.gz'"
-      zcat /proc/config.gz > ${SRC_DIR}/.config
+    "pcp")
+      info "Downloading .config file for kernel ${uname_r}"
+      wget -4 -nv --show-progress -O - ${PCP_URL_REFIX}.config.xz \
+          | xzcat -v > ${SRC_DIR}/.config
       ;;
   esac
 }
@@ -147,13 +195,20 @@ get_config() {
 ## @param[in]  SRC_DIR Kernel sources directory path
 get_symvers() {
   local uname_r=$1
-  local suffix
-  [[ ${uname_r} =~ -v7 ]] && suffix="7"
-
   # Get Module.symvers files
   info "Downloading Module.symvers file for kernel ${uname_r}"
-  wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
-      ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${suffix}.symvers
+  case "${DISTRO}" in
+    "")
+      local suffix
+      [[ ${uname_r} =~ -v7 ]] && suffix="7"
+      wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
+          ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${suffix}.symvers
+      ;;
+    "pcp")
+      wget -4 -nv --show-progress -O - ${PCP_URL_REFIX}Module.symvers.xz \
+          | xzcat -v > ${SRC_DIR}/Module.symvers
+      ;;
+  esac
 }
 
 ## @brief      Prepares the sources for building kernel modules
@@ -173,20 +228,24 @@ prepare_sources() {
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Parse command line options
 OPTIONS=d::,w::,L::,E::,r:,c:,n,h
-LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,release:,config:,no-links
+LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,\
+release:,config:,no-links,distro:,pcp-core:,pcp-rt
 args=$(getopt --name "$me" -o ${OPTIONS} -l ${LONG_OPTIONS},help -- "$@")
 [[ $? -eq 0 ]] || die "Wrong options." "${USAGE_HINT}"
 eval set -- $args
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    -d | --directory)          DEST_DIR="$2";     shift 2 ;;
-    -w | --working-directory)  WORK_DIR="$2";     shift 2 ;;
-    -L | --local-version)      LOCALVERSION="$2"; shift 2 ;;
-    -E | --extra-version)      EXTRAVERSION="$2"; shift 2 ;;
-    -r | --release)            DO_RELEASE="$2";   shift 2 ;;
-    -c | --config)             CONFIG_MODE="$2";  shift 2 ;;
-    -n | --no-links)           DO_LINKS="false";  shift ;;
+    -d | --directory)          DEST_DIR="$2";          shift 2 ;;
+    -w | --working-directory)  WORK_DIR="$2";          shift 2 ;;
+    -L | --local-version)      LOCALVERSION="$2";      shift 2 ;;
+    -E | --extra-version)      EXTRAVERSION="$2";      shift 2 ;;
+    -r | --release)            DO_RELEASE="$2";        shift 2 ;;
+    -c | --config)             CONFIG_MODE="$2";       shift 2 ;;
+         --distro)             DISTRO="$2";            shift 2 ;;
+         --pcp-core)           PCP_CORE_VERSION="$2";  shift 2 ;;
+         --pcp-rt)             PCP_RT="true";          shift ;;
+    -n | --no-links)           DO_LINKS="false";       shift ;;
     -h | --help)               usage; exit 0 ;;
     --)                        shift; break ;;
   esac
@@ -217,6 +276,12 @@ case "${CONFIG_MODE}" in
   *)        die "Invalid config mode." "${USAGE_HINT}"
 esac
 
+case ${DISTRO} in
+  "")       ;;
+  "pcp")    [[ ${PCP_CORE_VERSION} ]] || die "Can't proceed without --pcp-core argument" ;;
+  *)        die "Invalid distro mode." "${USAGE_HINT}"
+esac
+
 # Check if we need to cross compile
 host_uname_m=$(uname -m)
 if [[ ! ${host_uname_m} =~ ^arm(v[6-7]l|hf)$ ]]; then
@@ -232,14 +297,16 @@ fi
 cd ${WORK_DIR}
 get_sources
 
-
 for r in ${UNAME_R[@]}; do
   if [[ $r =~ -v7 ]]; then
     [[ ${DO_V7} = "true" ]] || continue
   else
     [[ ${DO_V6} = "true" ]] || continue
   fi
-  make_dirs       $r
+  case ${DISTRO} in
+    "")                       make_dirs $r             ;;
+    "pcp") set_pcp_vars $r && make_dirs ${PCP_UNAME_R} ;;
+  esac
   extract_sources $r
   get_config      $r
   get_symvers     $r
