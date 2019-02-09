@@ -23,11 +23,11 @@ DO_V7="true"
 CROSS_COMPILE_TOOLCHAIN=arm-linux-gnueabihf-
 MAKE_CROSS_COMPILE_ARGS=
 
-info() {
+info() { # <$1: info message>
   printf "${cgrn}$1${cend}\n"
 }
 
-die() {
+die() { # [$1: error message] [$2: hint]
   [[ $1 ]] && printf "${cred}ERROR: $1${cend}\n" >&2
   [[ $2 ]] && printf "$2\n"
   exit 1
@@ -60,11 +60,7 @@ Optional arguments:
 
 USAGE_HINT="Type '$me --help' to get usage information."
 
-## @brief      Sets global variables for building piCorePlayer modules
-## @param[in]  $1 Relase name
-## @param[out] PCP_UNAME_R piCorePlayer release name
-## @param[out] PCP_URL_REFIX piCorePlayer repo url prefix
-set_pcp_vars() {
+set_pcp_vars() { # <$1: Relase name>
   local uname_r=$1
   local pcp_core_version=${PCP_CORE_VERSION}
   local release=$(echo ${uname_r} | sed -r 's/[+-].*//')
@@ -94,8 +90,6 @@ set_pcp_vars() {
   PCP_URL_REFIX+="/${PCP_UNAME_R}_"
 }
 
-## @brief      Downloads kernel sources and appends release names to UNAME_R
-## @param[out] UNAME_R Array holding the release names
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
@@ -104,7 +98,7 @@ get_sources() {
   fi
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
-  # Get the kernel release version
+  # Get the kernel release version, appends release names to UNAME_R
   for v in "" "7"; do
     local release
     release=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
@@ -126,13 +120,7 @@ get_sources() {
       ${RASPI_URL}/${RASPI_COMMIT}.tar.gz
 }
 
-## @brief      Creates the kernel sources directory
-## @param[in]  $1 Relase name
-## @param[in]  DEST_DIR The path prefix
-## @param[in]  DO_LINKS If 'true', creates the 'build' link
-## @param[out] SRC_DIR Kernel sources directory path
-## @param[out] MOD_DIR Kernel modules directory path
-make_dirs() {
+make_dirs() { # <$1: Relase name>
   local uname_r=$1
   # Make directories and links
   SRC_DIR="${DEST_DIR}/usr/src/${uname_r}"
@@ -144,10 +132,7 @@ make_dirs() {
   fi
 }
 
-## @brief      Extracts sources to the kernel sources directory
-## @param[in]  $1 Relase name
-## @param[in]  SRC_DIR Kernel sources directory path
-extract_sources() {
+extract_sources() { # <$1: Relase name>
   local uname_r=$1
   # Extract the sources
   info "Extracting ${uname_r} kernel sources to ${SRC_DIR} ..."
@@ -159,12 +144,7 @@ extract_sources() {
   [[ $? -eq 0 ]] || die "Extracting kernel sources failed!"
 }
 
-## @brief      Creates the kernel .config file
-## @param[in]  $1 Relase name
-## @param[in]  CONFIG_MODE See --config
-## @param[in]  DISTRO See --distro
-## @param[in]  SRC_DIR Kernel sources directory path
-get_config() {
+get_config() { # <$1: Relase name>
   local uname_r=$1
   # Get .config files
   case "${DISTRO}" in
@@ -190,10 +170,7 @@ get_config() {
   esac
 }
 
-## @brief      Downloads the Module.symvers file
-## @param[in]  $1 Relase name
-## @param[in]  SRC_DIR Kernel sources directory path
-get_symvers() {
+get_symvers() { # <$1: Relase name>
   local uname_r=$1
   # Get Module.symvers files
   info "Downloading Module.symvers file for kernel ${uname_r}"
@@ -211,10 +188,7 @@ get_symvers() {
   esac
 }
 
-## @brief      Prepares the sources for building kernel modules
-## @param[in]  $1 Relase name
-## @param[in]  SRC_DIR Kernel sources directory path
-prepare_sources() {
+prepare_sources() { # <$1: Relase name>
   local uname_r=$1
   # Prepare modules
   info "Preparing ${uname_r} modules ..."
@@ -225,8 +199,9 @@ prepare_sources() {
   info "\nDone, you can now build kernel modules"
 }
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#------------------------------------------------------------------------------
 # Parse command line options
+#------------------------------------------------------------------------------
 OPTIONS=d::,w::,L::,E::,r:,c:,n,h
 LONG_OPTIONS=directory:,working-directory:,local-version:,extra-version:,\
 release:,config:,no-links,distro:,pcp-core:,pcp-rt
@@ -292,8 +267,9 @@ if [[ ! ${host_uname_m} =~ ^arm(v[6-7]l|hf)$ ]]; then
   MAKE_CROSS_COMPILE_ARGS="ARCH=arm CROSS_COMPILE=${CROSS_COMPILE_TOOLCHAIN}"
 fi
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#------------------------------------------------------------------------------
 # Main
+#------------------------------------------------------------------------------
 cd ${WORK_DIR}
 get_sources
 
