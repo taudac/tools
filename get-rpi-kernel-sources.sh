@@ -19,6 +19,9 @@ DO_LINKS="true"
 DO_V6="true"
 DO_V7="true"
 
+CROSS_COMPILE_TOOLCHAIN=arm-linux-gnueabihf-
+MAKE_CROSS_COMPILE_ARGS=
+
 info() {
   printf "${cgrn}$1${cend}\n"
 }
@@ -159,17 +162,10 @@ get_symvers() {
 prepare_sources() {
   local uname_r=$1
   # Prepare modules
-  info "Preparing ${uname_r} modules..."
-  # Check if we need to cross compile
-  if [[ $(uname -m) =~ ^arm(v[6-7]l|hf)$ ]]; then
-    make -C ${SRC_DIR} \
+  info "Preparing ${uname_r} modules ..."
+  make -C ${SRC_DIR} \
       LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
-      modules_prepare
-  else
-    make -C ${SRC_DIR} \
-      LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
-      ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
-  fi
+      ${MAKE_CROSS_COMPILE_ARGS} modules_prepare
   [[ $? -eq 0 ]] || die "make modules_prepare failed!"
   info "\nDone, you can now build kernel modules"
 }
@@ -220,6 +216,16 @@ case "${CONFIG_MODE}" in
   "skip")   ;;
   *)        die "Invalid config mode." "${USAGE_HINT}"
 esac
+
+# Check if we need to cross compile
+host_uname_m=$(uname -m)
+if [[ ! ${host_uname_m} =~ ^arm(v[6-7]l|hf)$ ]]; then
+  info "Host machine is ${host_uname_m}, setting up cross-compile toolchain"
+  if [[ ! -x "$(command -v ${CROSS_COMPILE_TOOLCHAIN}gcc)" ]]; then
+    die "Could not find '${CROSS_COMPILE_TOOLCHAIN}gcc', Exiting..."
+  fi
+  MAKE_CROSS_COMPILE_ARGS="ARCH=arm CROSS_COMPILE=${CROSS_COMPILE_TOOLCHAIN}"
+fi
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Main
