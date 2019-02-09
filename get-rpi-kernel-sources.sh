@@ -50,7 +50,7 @@ Optional arguments:
                                if MODE='skip': skip getting .config file,
                                defaults to 'module'
   -n, --no-links               skip making symbolic '/build' links
-      --help                   display this help and exit
+  -h, --help                   display this help and exit
 "
 }
 
