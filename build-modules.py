@@ -143,9 +143,9 @@ def main(cross_compile_args=""):
         git_args = shlex.split(git_cmd + "add lib/")
         subprocess.check_call(git_args)
         # git commit
-        git_args = shlex.split(git_cmd + "commit -am '{}'"
-                .format(subprocess.check_output(
-                        ["cat", "../modules/.git/taudac_git_tag"])[1:]))
+        with open('../modules/.git/taudac_git_tag', 'r') as f:
+            msg = f.read().lstrip('#').rstrip()
+        git_args = shlex.split(git_cmd + "commit -am '{}'".format(msg))
         subprocess.check_call(git_args)
         # git tag
         git_args = shlex.split(git_cmd + "tag "
