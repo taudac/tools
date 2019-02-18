@@ -102,7 +102,7 @@ def main(cross_compile_args=""):
     # check if newer kernels are available
     pending = []
     for c in hexxeh:
-        m = re.match(r'kernel: Bump to ([\d\.]+)', c[1])
+        m = re.match(r'kernel:? [Bb]ump to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(1)
             if nkver == ckver:
