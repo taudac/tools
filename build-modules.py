@@ -135,7 +135,8 @@ def main(cross_compile_args=""):
         subprocess.check_call("rm -rf ../modules/lib", shell=True)
         # launch make
         for pver in ["", "-v7"]:
-            make_args = shlex.split("make -C ../taudac-driver-dkms/src/ "
+            make_args = shlex.split("make --no-print-directory "
+                    "-C ../taudac-driver-dkms/src/ "
                     "{} kernelver={}{}+ prefix=/tmp release"
                     .format(cross_compile_args, kver, pver))
             subprocess.check_call(make_args)
