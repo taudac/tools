@@ -211,8 +211,7 @@ if __name__ == '__main__':
             os.environ["PATH"] += os.pathsep + os.path.abspath(CROSS_COMPILE_PATH)
             main(CROSS_COMPILE_ARGS)
     except subprocess.CalledProcessError as e:
-        note = ("command '{}' returned error code {}"
-                .format(" ".join(str(v) for v in e.cmd), e.returncode))
+        note = ("command '{}' returned error code {}".format(e.cmd, e.returncode))
         print(note)
         # send notification email
         if args.command == 'email':
