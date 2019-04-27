@@ -175,7 +175,7 @@ if __name__ == '__main__':
             help='assume "yes" as answer to all prompts and run non-interactively')
     parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*',
             help='store the sources in DIR, defaults to "/tmp"')
-    parser.add_argument('-w', '--working-directory', metavar='<DIR>',
+    parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*',
             help='use DIR as working directory, defaults to "/tmp"')
 
     # sub command email
