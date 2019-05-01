@@ -137,8 +137,8 @@ def main(cross_compile_args=""):
         for pver in ["", "-v7"]:
             make_args = shlex.split("make --no-print-directory "
                     "-C ../taudac-driver-dkms/src/ "
-                    "{} kernelver={}{}+ prefix=/tmp release"
-                    .format(cross_compile_args, kver, pver))
+                    "{} kernelver={}{}+ prefix={} release"
+                    .format(cross_compile_args, kver, pver, ' '.join(args.directory)))
             subprocess.check_call(make_args)
         # git add new modules
         git_args = shlex.split(git_cmd + "add lib/")
@@ -173,9 +173,9 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--yes', '--assume-yes',
             dest='assume_yes', action='store_true',
             help='assume "yes" as answer to all prompts and run non-interactively')
-    parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*',
+    parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*', default='/tmp',
             help='store the sources in DIR, defaults to "/tmp"')
-    parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*',
+    parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*', default='/tmp',
             help='use DIR as working directory, defaults to "/tmp"')
 
     # sub command email
