@@ -161,9 +161,9 @@ def main(cross_compile_args=""):
         subprocess.check_call(git_args)
         if query_yes_no("Do you want to publish?"):
             git_args = shlex.split(git_cmd + "push")
-            subprocess.check_call(git_args)
+            subprocess.check_call(git_args, timeout=30)
             git_args.append("--tags")
-            subprocess.check_call(git_args)
+            subprocess.check_call(git_args, timeout=30)
         # send notification email
         if args.command == 'email':
             send_email("TauDAC modules for kernel {}".format(kver),
@@ -216,6 +216,12 @@ if __name__ == '__main__':
             main(CROSS_COMPILE_ARGS)
     except subprocess.CalledProcessError as e:
         note = ("command '{}' returned error code {}".format(e.cmd, e.returncode))
+        print(note)
+        # send notification email
+        if args.command == 'email':
+            send_email("Building TauDAC modules failed", note)
+    except subprocess.TimeoutExpired as e:
+        note = ("command '{}' expired".format(e.cmd))
         print(note)
         # send notification email
         if args.command == 'email':
