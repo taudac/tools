@@ -108,7 +108,7 @@ def main(cross_compile_args=""):
         m = re.match(r'kernel:? [Bb]ump to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(1)
-            if nkver <= ckver:
+            if nkver <= ckver or nkver in [v[1] for v in pending]:
                 break
             else:
                 print("New kernel available: {}".format(nkver))
