@@ -137,7 +137,7 @@ def main(cross_compile_args=""):
         # remove old modules
         subprocess.check_call("rm -rf ../modules/lib", shell=True)
         # launch make
-        for pver in ["", "-v7"]:
+        for pver in ["", "-v7", "-v7l"]:
             make_args = shlex.split("make --no-print-directory "
                     "-C ../taudac-driver-dkms/src/ "
                     "{} kernelver={}{}+ prefix={} release"

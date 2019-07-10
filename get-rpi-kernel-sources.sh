@@ -17,8 +17,9 @@ WORK_DIR="/tmp"
 LOCALVERSION=+
 CONFIG_MODE="module"
 DO_LINKS="true"
-DO_V6="true"
-DO_V7="true"
+DO_V6="false"
+DO_V7="false"
+DO_V7L="false"
 
 CROSS_COMPILE_TOOLCHAIN=arm-linux-gnueabihf-
 MAKE_CROSS_COMPILE_ARGS=
@@ -45,7 +46,7 @@ Optional arguments:
   -w, --working-directory=DIR  use DIR as working directory, defaults to '/tmp'
   -L, --local-version=VER      set make variable LOCALVERISON to VER, defaults to '+'
   -E, --extra-version=VER      set make variable EXTRAVERSION to VER
-  -r, --release=VER            download release VER only, one of: 'v6', 'v7'
+  -r, --release=VER            download release VER only, one of: 'v6', 'v7' or 'v7l'
   -c, --config=MODE            if MODE='module': get .config file from configs.ko module,
                                if MODE='proc': get .config file from proc /proc/config.gz,
                                if MODE='skip': skip getting .config file,
@@ -99,7 +100,7 @@ get_sources() {
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
   # Get the kernel release version, appends release names to UNAME_R
-  for v in "" "7"; do
+  for v in "" "7" "7l"; do
     UNAME_R+=($(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
       | sed -r '/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
   done
@@ -188,7 +189,7 @@ prepare_sources() { # <$1: Relase name>
       LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
       ${MAKE_CROSS_COMPILE_ARGS} modules_prepare
   [[ $? -eq 0 ]] || die "make modules_prepare failed!"
-  info "\nDone, you can now build kernel modules"
+  info "\nDone, you can now build ${uname_r} kernel modules"
 }
 
 #------------------------------------------------------------------------------
@@ -230,10 +231,15 @@ fi
 
 if [ -n "${DO_RELEASE}" ]; then
   case "${DO_RELEASE}" in
-    "v7") DO_V6="false" ;;
-    "v6") DO_V7="false" ;;
+    "v6") DO_V6="true" ;;
+    "v7") DO_V7="true" ;;
+    "v7l") DO_V7L="true" ;;
        *) die "Invalid release." "${USAGE_HINT}"
   esac
+else
+  DO_V6="true"
+  DO_V7="true"
+  DO_V7L="true"
 fi
 
 case "${CONFIG_MODE}" in
