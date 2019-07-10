@@ -166,9 +166,8 @@ def main(cross_compile_args=""):
             subprocess.check_call(git_args)
         # send notification email
         if args.command == 'email':
-            send_email(subject="TauDAC modules for kernel {}".format(kver),
-                    text="TauDAC modules for kernel version {} have been built."
-                    .format(kver) )
+            send_email("TauDAC modules for kernel {}".format(kver),
+                    "TauDAC modules for kernel version {} have been built.".format(kver) )
 
 if __name__ == '__main__':
     # parse arguments
