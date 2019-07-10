@@ -130,9 +130,9 @@ def main(cross_compile_args=""):
         # download
         gks_args = ["./get-rpi-kernel-sources.sh", sha]
         if args.directory is not None:
-            gks_args.insert(1, "-d{}".format(' '.join(args.directory)))
+            gks_args.insert(1, "-d{}".format(args.directory))
         if args.working_directory is not None:
-            gks_args.insert(1, "-w{}".format(' '.join(args.working_directory)))
+            gks_args.insert(1, "-w{}".format(args.working_directory))
         subprocess.check_call(gks_args)
         # remove old modules
         subprocess.check_call("rm -rf ../modules/lib", shell=True)
@@ -141,7 +141,7 @@ def main(cross_compile_args=""):
             make_args = shlex.split("make --no-print-directory "
                     "-C ../taudac-driver-dkms/src/ "
                     "{} kernelver={}{}+ prefix={} release"
-                    .format(cross_compile_args, kver, pver, ' '.join(args.directory)))
+                    .format(cross_compile_args, kver, pver, args.directory))
             subprocess.check_call(make_args)
         # git add new modules
         git_args = shlex.split(git_cmd + "add lib/")
