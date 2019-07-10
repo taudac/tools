@@ -105,7 +105,13 @@ def main(cross_compile_args=""):
     # check if newer kernels are available
     pending = []
     for c in hexxeh:
-        m = re.match(r'kernel:? [Bb]ump to ([\d\.]+)', c[1])
+        if c[1] == "firmware: Updates for Pi4":
+            wurst = "kernel: Bump to 4.19.50"
+            print(wurst)
+            m = re.match(r'kernel:? [Bb]ump to ([\d\.]+)', wurst)
+        else:
+            m = re.match(r'kernel:? [Bb]ump to ([\d\.]+)', c[1])
+
         if m is not None:
             nkver = m.group(1)
             if nkver <= ckver or nkver in [v[1] for v in pending]:
