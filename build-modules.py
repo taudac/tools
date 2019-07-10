@@ -91,12 +91,15 @@ def main(cross_compile_args=""):
     git_cmd = "git -C ../modules/ "
 
     # get latest supported kernel version
-    last_commit = taudac.log(1)
-    if last_commit is None:
-        print("Failed reading taudac log!")
-        return
+    if args.current_version is not None:
+        ckver = args.current_version
+    else:
+        last_commit = taudac.log(1)
+        if last_commit is None:
+            print("Failed reading taudac log!")
+            return
+        ckver = re.match(r'taudac-.* for ([\d\.]+)', last_commit[0][1]).group(1)
 
-    ckver = re.match(r'taudac-.* for ([\d\.]+)', last_commit[0][1]).group(1)
     print("Latest supported kernel is {}".format(ckver))
 
     # check if newer kernels are available
@@ -105,7 +108,7 @@ def main(cross_compile_args=""):
         m = re.match(r'kernel:? [Bb]ump to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(1)
-            if nkver == ckver:
+            if nkver <= ckver:
                 break
             else:
                 print("New kernel available: {}".format(nkver))
@@ -177,6 +180,8 @@ if __name__ == '__main__':
             help='store the sources in DIR, defaults to "/tmp"')
     parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*', default='/tmp',
             help='use DIR as working directory, defaults to "/tmp"')
+    parser.add_argument('-C', '--current-version', metavar='<VER>',
+            help='assume VER is the latest supported kernel version')
 
     # sub command email
     subparsers = parser.add_subparsers(dest='command', metavar='<command>')
