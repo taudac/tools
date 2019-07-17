@@ -169,15 +169,23 @@ def main(cross_compile_args=""):
             send_email("TauDAC modules for kernel {}".format(kver),
                     "TauDAC modules for kernel version {} have been built.".format(kver) )
 
+def dir_path(path):
+    if os.path.isdir(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError("'{}' is not a valid path".format(path))
+
 if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-y', '--yes', '--assume-yes',
             dest='assume_yes', action='store_true',
             help='assume "yes" as answer to all prompts and run non-interactively')
-    parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*', default='/tmp',
+    parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*',
+            default='/tmp', type=dir_path,
             help='store the sources in DIR, defaults to "/tmp"')
-    parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*', default='/tmp',
+    parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*',
+            default='/tmp', type=dir_path,
             help='use DIR as working directory, defaults to "/tmp"')
     parser.add_argument('-C', '--current-version', metavar='<VER>',
             help='assume VER is the latest supported kernel version')
