@@ -181,10 +181,10 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--yes', '--assume-yes',
             dest='assume_yes', action='store_true',
             help='assume "yes" as answer to all prompts and run non-interactively')
-    parser.add_argument('-d', '--directory', metavar='<DIR>', nargs='*',
+    parser.add_argument('-d', '--directory', metavar='<DIR>',
             default='/tmp', type=dir_path,
             help='store the sources in DIR, defaults to "/tmp"')
-    parser.add_argument('-w', '--working-directory', metavar='<DIR>', nargs='*',
+    parser.add_argument('-w', '--working-directory', metavar='<DIR>',
             default='/tmp', type=dir_path,
             help='use DIR as working directory, defaults to "/tmp"')
     parser.add_argument('-C', '--current-version', metavar='<VER>',
