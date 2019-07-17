@@ -84,6 +84,10 @@ def query_yes_no(question):
         else:
             print("Please respond with 'yes' or 'no' ", end='')
 
+def call(cmd, **kwargs):
+    if not isinstance(cmd, list):
+        cmd = shlex.split(cmd)
+    subprocess.check_call(cmd, **kwargs)
 
 def main(cross_compile_args=""):
     hexxeh = GitHubRepo("Hexxeh", "rpi-firmware")
@@ -122,8 +126,7 @@ def main(cross_compile_args=""):
         return
 
     print("Updating working directory...")
-    git_args = shlex.split(git_cmd + "pull --ff-only")
-    subprocess.check_call(git_args)
+    call(git_cmd + "pull --ff-only")
 
     # download sources and build modules for each new kernel
     for sha, kver in sorted(pending, key=lambda x: x[1]):
@@ -133,37 +136,29 @@ def main(cross_compile_args=""):
             gks_args.insert(1, "-d{}".format(args.directory))
         if args.working_directory is not None:
             gks_args.insert(1, "-w{}".format(args.working_directory))
-        subprocess.check_call(gks_args)
+        call(gks_args)
         # remove old modules
-        subprocess.check_call("rm -rf ../modules/lib", shell=True)
+        call("rm -rf ../modules/lib")
         # launch make
         for pver in ["", "-v7", "-v7l"]:
-            make_args = shlex.split("make --no-print-directory "
+            make_args = ("make --no-print-directory "
                     "-C ../taudac-driver-dkms/src/ "
-                    "{} kernelver={}{}+ prefix={} release"
-                    .format(cross_compile_args, kver, pver, args.directory))
-            subprocess.check_call(make_args)
+                    "{} kernelver={}{}+ prefix={} release").format(
+                            cross_compile_args, kver, pver, args.directory)
+            call(make_args)
         # git add new modules
-        git_args = shlex.split(git_cmd + "add lib/")
-        subprocess.check_call(git_args)
+        call(git_cmd + "add lib/")
         # git commit
         with open('../modules/.git/taudac_git_tag', 'r') as f:
             msg = f.read().lstrip('#').rstrip()
-        git_args = shlex.split(git_cmd + "commit -am '{}'".format(msg))
-        subprocess.check_call(git_args)
+        call(git_cmd + "commit -am '{}'".format(msg))
         # git tag
-        git_args = shlex.split(git_cmd + "tag "
-                "rpi-volumio-{}-taudac-modules".format(kver))
-        subprocess.check_call(git_args)
+        call(git_cmd + "tag rpi-volumio-{}-taudac-modules".format(kver))
         # git push
-        git_args = shlex.split(git_cmd + "log "
-                "--oneline --decorate=on origin/master..")
-        subprocess.check_call(git_args)
+        call(git_cmd + "log --oneline --decorate=on origin/master..")
         if query_yes_no("Do you want to publish?"):
-            git_args = shlex.split(git_cmd + "push")
-            subprocess.check_call(git_args, timeout=30)
-            git_args.append("--tags")
-            subprocess.check_call(git_args, timeout=30)
+            call(git_cmd + "push",        timeout=30)
+            call(git_cmd + "push --tags", timeout=30)
         # send notification email
         if args.command == 'email':
             send_email("TauDAC modules for kernel {}".format(kver),
