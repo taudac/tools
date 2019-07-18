@@ -94,6 +94,7 @@ def query_yes_no(question):
         else:
             print("Please respond with 'yes' or 'no' ", end='')
 
+
 def call(cmd, **kwargs):
     if not isinstance(cmd, list):
         cmd = shlex.split(cmd)
@@ -101,6 +102,22 @@ def call(cmd, **kwargs):
         with open(args.log_file, 'a+') as file:
             subprocess.check_call(cmd, stdout=file, stderr=file, **kwargs)
     subprocess.check_call(cmd, **kwargs)
+
+
+def notify_done(kver):
+    subject = "TauDAC modules for kernel {}".format(kver)
+    body = "TauDAC modules for kernel version {} have been built.".format(kver)
+    print(body)
+    if args.command == 'email':
+        send_email(subject, body)
+
+
+def notify_except(note):
+    subject = "Building TauDAC modules failed"
+    print(note)
+    if args.command == 'email':
+        send_email(subject, note)
+
 
 def main(cross_compile_args=""):
     hexxeh = GitHubRepo("Hexxeh", "rpi-firmware")
@@ -172,10 +189,9 @@ def main(cross_compile_args=""):
         if query_yes_no("Do you want to publish?"):
             call(git_cmd + "push",        timeout=30)
             call(git_cmd + "push --tags", timeout=30)
-        # send notification email
-        if args.command == 'email':
-            send_email("TauDAC modules for kernel {}".format(kver),
-                    "TauDAC modules for kernel version {} have been built.".format(kver) )
+        # done
+        notify_done(kver)
+
 
 def dir_path(path):
     if os.path.isdir(path):
@@ -183,11 +199,13 @@ def dir_path(path):
     else:
         raise argparse.ArgumentTypeError("'{}' is not a valid path".format(path))
 
+
 def new_file_path(file):
     if os.path.isfile(file):
         raise argparse.ArgumentTypeError("'{}' exists".format(file))
     else:
         return file
+
 
 if __name__ == '__main__':
     # parse arguments
@@ -241,15 +259,9 @@ if __name__ == '__main__':
             main(CROSS_COMPILE_ARGS)
     except subprocess.CalledProcessError as e:
         note = ("command '{}' returned error code {}".format(e.cmd, e.returncode))
-        print(note)
-        # send notification email
-        if args.command == 'email':
-            send_email("Building TauDAC modules failed", note)
+        notify_except(note)
     except subprocess.TimeoutExpired as e:
         note = ("command '{}' expired".format(e.cmd))
-        print(note)
-        # send notification email
-        if args.command == 'email':
-            send_email("Building TauDAC modules failed", note)
+        notify_except(note)
 
 # vim: ts=4 sw=4 sts=4 et
