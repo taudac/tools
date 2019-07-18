@@ -9,7 +9,8 @@ from urllib.error import URLError, HTTPError
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
+from email.mime.base import MIMEBase
+from email import encoders
 
 IS_RASPI_RE = r'arm(v[6-7](l|hf))$'
 CROSS_COMPILE_ARGS = "ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-"
@@ -52,12 +53,21 @@ class GitHubRepo:
         return messages
 
 
-def send_email(subject='', body=''):
+def send_email(subject='', body='', filename=None):
     msg = MIMEMultipart()
     msg['From'] = args.sender
     msg['To'] = args.recipient
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
+
+    if filename is not None:
+        part = MIMEBase('application', "octet-stream")
+        with open(filename, 'rb') as file:
+            part.set_payload(file.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition',
+                'attachment; filename="{}"'.format(os.path.basename(filename)))
+        msg.attach(part)
 
     print("Sending email...")
     server = smtplib.SMTP(args.smtp_server, args.smtp_server_port)
