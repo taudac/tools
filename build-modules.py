@@ -87,6 +87,9 @@ def query_yes_no(question):
 def call(cmd, **kwargs):
     if not isinstance(cmd, list):
         cmd = shlex.split(cmd)
+    if args.log_file is not None:
+        with open(args.log_file, 'a+') as file:
+            subprocess.check_call(cmd, stdout=file, stderr=file, **kwargs)
     subprocess.check_call(cmd, **kwargs)
 
 def main(cross_compile_args=""):
@@ -170,6 +173,12 @@ def dir_path(path):
     else:
         raise argparse.ArgumentTypeError("'{}' is not a valid path".format(path))
 
+def new_file_path(file):
+    if os.path.isfile(file):
+        raise argparse.ArgumentTypeError("'{}' exists".format(file))
+    else:
+        return file
+
 if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -182,6 +191,9 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--working-directory', metavar='<DIR>',
             default='/tmp', type=dir_path,
             help='use DIR as working directory, defaults to "/tmp"')
+    parser.add_argument('-l', '--log-file', metavar='<FILE>',
+            type=new_file_path,
+            help='write subprocess output to FILE')
     parser.add_argument('-C', '--current-version', metavar='<VER>',
             help='assume VER is the latest supported kernel version')
 
