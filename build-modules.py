@@ -116,7 +116,10 @@ def notify_except(note):
     subject = "Building TauDAC modules failed"
     print(note)
     if args.command == 'email':
-        send_email(subject, note)
+        if args.log_file is not None:
+            send_email(subject, note, args.log_file)
+        else:
+            send_email(subject, note)
 
 
 def main(cross_compile_args=""):
