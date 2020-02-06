@@ -146,12 +146,12 @@ def main(cross_compile_args=""):
         m = re.match(r'kernel:? ([Bb]ump|[Uu]pdate) to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(2)
-            if version.parse(nkver) <= version.parse(ckver) \
-                    or nkver in [v[1] for v in pending]:
+            if version.parse(nkver) <= version.parse(ckver):
                 break
-            else:
-                print("New kernel available: {}".format(nkver))
-                pending.append((c[0], nkver))
+            if nkver in [v[1] for v in pending]:
+                break
+            print("New kernel available: {}".format(nkver))
+            pending.append((c[0], nkver))
 
     if not pending:
         print("Up-to-date with latest 'Hexxeh' kernel")
