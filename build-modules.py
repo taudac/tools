@@ -5,6 +5,7 @@ import json, re
 import os, subprocess, shlex
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
+from packaging import version
 
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -145,7 +146,8 @@ def main(cross_compile_args=""):
         m = re.match(r'kernel:? ([Bb]ump|[Uu]pdate) to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(2)
-            if nkver <= ckver or nkver in [v[1] for v in pending]:
+            if version.parse(nkver) <= version.parse(ckver) \
+                    or nkver in [v[1] for v in pending]:
                 break
             else:
                 print("New kernel available: {}".format(nkver))
