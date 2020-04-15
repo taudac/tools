@@ -164,7 +164,7 @@ def main(cross_compile_args=""):
     call(git_cmd + "pull --ff-only")
 
     # download sources and build modules for each new kernel
-    for sha, kver in sorted(pending, key=lambda x: x[1]):
+    for sha, kver in sorted(pending, key=lambda x: version.parse(x[1])):
         # download
         gks_args = ["./get-rpi-kernel-sources.sh", sha]
         if args.directory is not None:
