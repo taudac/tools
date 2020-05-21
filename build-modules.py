@@ -132,11 +132,18 @@ def main(cross_compile_args=""):
     if args.current_version is not None:
         ckver = args.current_version
     else:
-        last_commit = taudac.log(1)
-        if last_commit is None:
+        last_commits = taudac.log(2)
+        if last_commits is None:
             print("Failed reading taudac log!")
             return
-        ckver = re.match(r'taudac-.* for ([\d\.]+)', last_commit[0][1]).group(1)
+        for commit in last_commits:
+            m = re.match(r'taudac-.* for ([\d\.]+)', commit[1])
+            if m:
+                ckver = m.group(1)
+                break
+        else:
+            print("Didn't find supported kernel version!")
+            return
 
     print("Latest supported kernel is {}".format(ckver))
 
