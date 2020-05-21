@@ -187,7 +187,7 @@ def main(cross_compile_args=""):
         call("rm -rf ../modules/lib")
         # launch make
         for pver in ["", "-v7", "-v7l"]:
-            make_args = ("make --no-print-directory "
+            make_args = ("make --no-print-directory --always-make "
                     "-C ../taudac-driver-dkms/src/ "
                     "{} kernelver={}{}+ prefix={} release").format(
                             cross_compile_args, kver, pver, args.directory)
