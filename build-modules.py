@@ -157,8 +157,8 @@ def main(cross_compile_args=""):
                 break
             if nkver in [v[1] for v in pending]:
                 break
-            print("New kernel available: {}".format(nkver))
             pending.append((c[0], nkver))
+            print("[{:02d}] New kernel available: {}".format(len(pending), nkver))
 
     if not pending:
         print("Up-to-date with latest 'Hexxeh' kernel")
