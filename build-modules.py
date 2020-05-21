@@ -170,8 +170,12 @@ def main(cross_compile_args=""):
     print("Updating working directory...")
     call(git_cmd + "pull --ff-only")
 
+    pending = sorted(pending, key=lambda x: version.parse(x[1]))
+    if args.max_versions:
+        pending = pending[:args.max_versions]
+
     # download sources and build modules for each new kernel
-    for sha, kver in sorted(pending, key=lambda x: version.parse(x[1])):
+    for sha, kver in pending:
         # download
         gks_args = ["./get-rpi-kernel-sources.sh", sha]
         if args.directory is not None:
@@ -234,6 +238,9 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--log-file', metavar='<FILE>',
             type=new_file_path,
             help='write subprocess output to FILE')
+    parser.add_argument('-m', '--max-versions', metavar='<N>',
+            type=int,
+            help='stop after building <N> versions')
     parser.add_argument('-C', '--current-version', metavar='<VER>',
             help='assume VER is the latest supported kernel version')
 
