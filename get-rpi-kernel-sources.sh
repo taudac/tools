@@ -113,6 +113,13 @@ get_sources() {
       ${RASPI_URL}/${RASPI_COMMIT}.tar.gz
 }
 
+get_armver() { # <$1: Relase name>
+  # Given a release name, returns the arm version suffix
+  # For example 7l for 4.19.86-v7l+
+  local v=$(echo $1 | sed -nr 's/([0-9]\.[0-9]+\.[0-9]+)(-v)?([7-8]l?)?\+/\3/p')
+  echo "$v"
+}
+
 make_dirs() { # <$1: Relase name>
   local uname_r=$1
   # Make directories and links
@@ -169,8 +176,7 @@ get_symvers() { # <$1: Relase name>
   info "Downloading Module.symvers file for kernel ${uname_r}"
   case "${DISTRO}" in
     "")
-      local suffix
-      [[ ${uname_r} =~ -v7 ]] && suffix="7"
+      local suffix=$(get_armver ${uname_r})
       wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
           ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${suffix}.symvers
       ;;
