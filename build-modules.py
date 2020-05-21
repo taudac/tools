@@ -45,7 +45,7 @@ class GitHubRepo:
             commits = json.loads(json_str.decode('utf-8'))
         except (HTTPError, URLError) as e:
             print(e)
-            return
+            raise
 
         messages = []
         for c in commits:
