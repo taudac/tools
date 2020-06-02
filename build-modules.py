@@ -127,7 +127,7 @@ def notify_except(note):
 def main(cross_compile_args=""):
     hexxeh = GitHubRepo("Hexxeh", "rpi-firmware")
     taudac = GitHubRepo("taudac", "modules")
-    git_cmd = "git -C ../modules/ "
+    git_cmd = ['git', '-C', '../modules/']
 
     # get latest supported kernel version
     if args.current_version is not None:
@@ -169,7 +169,7 @@ def main(cross_compile_args=""):
         return
 
     print("Updating working directory...")
-    call(git_cmd + "pull --ff-only")
+    call(git_cmd + ['pull', '--ff-only'])
 
     pending = sorted(pending, key=lambda x: version.parse(x[1]))
     if args.max_versions:
@@ -178,7 +178,7 @@ def main(cross_compile_args=""):
     # download sources and build modules for each new kernel
     for sha, kver in pending:
         # download
-        gks_args = ["./get-rpi-kernel-sources.sh", sha]
+        gks_args = ['./get-rpi-kernel-sources.sh', sha]
         if args.directory is not None:
             gks_args.insert(1, "-d{}".format(args.directory))
         if args.working_directory is not None:
@@ -194,18 +194,18 @@ def main(cross_compile_args=""):
                             cross_compile_args, kver, pver, args.directory)
             call(make_args)
         # git add new modules
-        call(git_cmd + "add lib/")
+        call(git_cmd + ['add', 'lib/'])
         # git commit
         with open('../modules/.git/taudac_git_tag', 'r') as f:
             msg = f.read().lstrip('#').rstrip()
-        call(git_cmd + "commit -am '{}'".format(msg))
+        call(git_cmd + ['commit', '-am', msg])
         # git tag
-        call(git_cmd + "tag rpi-volumio-{}-taudac-modules".format(kver))
+        call(git_cmd + ['tag', 'rpi-volumio-{}-taudac-modules'.format(kver)])
         # git push
-        call(git_cmd + "log --oneline --decorate=on origin/master..")
+        call(git_cmd + ['log', '--oneline', '--decorate=on', 'origin/master..'])
         if query_yes_no("Do you want to publish?"):
-            call(git_cmd + "push",        timeout=30)
-            call(git_cmd + "push --tags", timeout=30)
+            call(git_cmd + ['push'],           timeout=30)
+            call(git_cmd + ['push', '--tags'], timeout=30)
         # done
         notify_done(kver)
 
