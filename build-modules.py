@@ -3,6 +3,7 @@
 import argparse
 import json, re
 import os, subprocess, shlex
+from shutil import rmtree
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 from packaging import version
@@ -184,7 +185,7 @@ def main(cross_compile_args=""):
             gks_args.insert(1, "-w{}".format(args.working_directory))
         call(gks_args)
         # remove old modules
-        call("rm -rf ../modules/lib")
+        rmtree('../modules/lib', ignore_errors=True)
         # launch make
         for pver in ["", "-v7", "-v7l"]:
             make_args = ("make --no-print-directory --always-make "
