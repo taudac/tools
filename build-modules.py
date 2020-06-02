@@ -200,7 +200,8 @@ def main(cross_compile_args=""):
             msg = f.read().lstrip('#').rstrip()
         call(git_cmd + ['commit', '-am', msg])
         # git tag
-        call(git_cmd + ['tag', 'rpi-volumio-{}-taudac-modules'.format(kver)])
+        call(git_cmd + ['tag', '--force',
+                'rpi-volumio-{}-taudac-modules'.format(kver)])
         # git push
         call(git_cmd + ['log', '--oneline', '--decorate=on', 'origin/master..'])
         if query_yes_no("Do you want to publish?"):
