@@ -159,7 +159,8 @@ def main(cross_compile_args=""):
             if nkver in [v[1] for v in pending]:
                 break
             pending.append((c[0], nkver))
-            print("[{:02d}] New kernel available: {}".format(len(pending), nkver))
+            print("[{:02d}] New kernel available: {} ({})"
+                    .format(len(pending), pending[-1][1], pending[-1][0]))
 
     if not pending:
         print("Up-to-date with latest 'Hexxeh' kernel")
