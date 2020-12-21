@@ -102,7 +102,7 @@ get_sources() {
   # Get the kernel release version, appends release names to UNAME_R
   for v in "" "7" "7l"; do
     UNAME_R+=($(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
-      | sed -r '/.*([1-9]{1}\.[1-9]{1,2}\.[1-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
+      | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
   done
 
   info "Found ${#UNAME_R[*]} versions: ${UNAME_R[*]}"
