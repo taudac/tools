@@ -16,8 +16,6 @@ from email import encoders
 
 IS_RASPI_RE = r'arm(v[6-7](l|hf))$'
 CROSS_COMPILE_ARGS = "ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-"
-CROSS_COMPILE_PATH = os.path.expanduser("~") + "/src/raspberrypi"\
-        "/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/"
 
 
 class GitHubRepo:
@@ -277,7 +275,6 @@ if __name__ == '__main__':
         if re.match(IS_RASPI_RE, machine.decode('utf-8')) is not None:
             main()
         else:
-            os.environ["PATH"] += os.pathsep + os.path.abspath(CROSS_COMPILE_PATH)
             main(CROSS_COMPILE_ARGS)
     except subprocess.CalledProcessError as e:
         note = ("command '{}' returned error code {}".format(e.cmd, e.returncode))
