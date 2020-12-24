@@ -98,6 +98,8 @@ set_pcp_vars() { # <$1: Relase name>
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
+  RASPI_LINUX_ARCHIVE_NAME=${RASPI_COMMIT}.tar.gz
+
   if [[ ! ${RASPI_COMMIT} =~ [0-9a-f]{40} ]]; then
     die "Can't find Raspberry Pi commit hash!"
   fi
@@ -113,8 +115,7 @@ get_sources() {
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
-  wget -nv --show-progress -O rpi-linux.tar.gz \
-      ${RASPI_URL}/${RASPI_COMMIT}.tar.gz
+  wget -nv --show-progress -nc ${RASPI_URL}/${RASPI_LINUX_ARCHIVE_NAME}
 }
 
 get_armver() { # <$1: Relase name>
@@ -138,12 +139,13 @@ make_dirs() { # <$1: Relase name>
 
 extract_sources() { # <$1: Relase name>
   local uname_r=$1
+  local archive=${RASPI_LINUX_ARCHIVE_NAME}
   # Extract the sources
   info "Extracting ${uname_r} kernel sources to ${SRC_DIR} ..."
   if [[ -x "$(command -v pv)" ]]; then
-      pv rpi-linux.tar.gz | bsdtar --strip-components=1 -xf - -C ${SRC_DIR}
+      pv ${archive} | bsdtar --strip-components=1 -xkf - -C ${SRC_DIR}
   else
-      bsdtar --strip-components=1 -xvf rpi-linux.tar.gz -C ${SRC_DIR}
+      bsdtar --strip-components=1 -xkvf ${archive} -C ${SRC_DIR}
   fi
   [[ $? -eq 0 ]] || die "Extracting kernel sources failed!"
 }
