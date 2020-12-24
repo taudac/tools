@@ -56,6 +56,10 @@ Optional arguments:
       --pcp-rt                 if distro is 'pcp', prepare sources for 'Realtime' version
   -n, --no-links               skip making symbolic '/build' links
   -h, --help                   display this help and exit
+
+Dependencies:
+  pv bsdtar bc flex bison libssl-dev
+
 "
 }
 
