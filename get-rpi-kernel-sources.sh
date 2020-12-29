@@ -74,7 +74,7 @@ set_pcp_vars() { # <$1: Relase name>
   local armv_suffix
   if [[ ${uname_r} =~ -v7 ]]; then
     armv="armv7"
-    armv_suffix="_v7"
+    armv_suffix="-v7"
   else
     armv="armv6"
   fi
