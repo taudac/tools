@@ -97,19 +97,23 @@ set_pcp_vars() { # <$1: Relase name>
 
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
-  RASPI_COMMIT=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
+  RASPI_COMMIT=b29908a
   RASPI_LINUX_ARCHIVE_NAME=${RASPI_COMMIT}.tar.gz
 
-  if [[ ! ${RASPI_COMMIT} =~ [0-9a-f]{40} ]]; then
-    die "Can't find Raspberry Pi commit hash!"
-  fi
+  # if [[ ! ${RASPI_COMMIT} =~ [0-9a-f]{40} ]]; then
+  #   die "Can't find Raspberry Pi commit hash!"
+  # fi
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
-  # Get the kernel release version, appends release names to UNAME_R
-  for v in "" "7" "7l"; do
-    UNAME_R+=($(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
-      | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
-  done
+  # # Get the kernel release version, appends release names to UNAME_R
+  # for v in "" "7" "7l"; do
+  #   UNAME_R+=($(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
+  #     | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
+  # done
+
+
+  UNAME_R+="4.19.122-v7+"
+
 
   info "Found ${#UNAME_R[*]} versions: ${UNAME_R[*]}"
 
