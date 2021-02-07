@@ -187,8 +187,9 @@ def main(cross_compile_args=""):
         rmtree('../modules/lib', ignore_errors=True)
         # launch make
         for pver in ["", "-v7", "-v7l"]:
-            make_args = ("make --no-print-directory --always-make "
-                    "-C ../taudac-driver-dkms/src/ "
+            make_args = ("make INSTALL_TO_ORIGDIR=1 "
+                    "--no-print-directory --always-make "
+                    "-C ../taudac-driver-dkms/src/"
                     "{} kernelver={}{}+ prefix={} release").format(
                             cross_compile_args, kver, pver, args.directory)
             call(make_args)
