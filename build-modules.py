@@ -15,7 +15,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 IS_RASPI_RE = r'arm(v[6-7](l|hf))$'
-CROSS_COMPILE_ARGS = "ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-"
+CROSS_COMPILE_ARGS = ['ARCH=arm', 'CROSS_COMPILE=arm-linux-gnueabihf-']
 
 
 class GitHubRepo:
@@ -187,11 +187,11 @@ def main(cross_compile_args=""):
         rmtree('../modules/lib', ignore_errors=True)
         # launch make
         for pver in ["", "-v7", "-v7l"]:
-            make_args = ("make INSTALL_TO_ORIGDIR=1 "
-                    "--no-print-directory --always-make "
-                    "-C ../taudac-driver-dkms/src/"
-                    "{} kernelver={}{}+ prefix={} release").format(
-                            cross_compile_args, kver, pver, args.directory)
+            make_args = ['make', '--no-print-directory', '--always-make',
+                    '-C', '../taudac-driver-dkms/src/',
+                    'INSTALL_TO_ORIGDIR=1', *cross_compile_args,
+                    f'kernelver={kver}{pver}+',
+                    f'prefix={args.directory}', 'release']
             call(make_args)
         # git add new modules
         call(git_cmd + ['add', 'lib/'])
