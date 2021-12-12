@@ -111,7 +111,11 @@ get_sources() {
       | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
   done
 
-  info "Found ${#UNAME_R[*]} versions: ${UNAME_R[*]}"
+  if [ ${#UNAME_R[@]} -eq 0 ]; then
+    die "Can't find release version string!"
+  else
+    info "Found ${#UNAME_R[*]} versions: ${UNAME_R[*]}"
+  fi
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
