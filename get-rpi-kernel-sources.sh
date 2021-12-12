@@ -6,11 +6,11 @@ cred='\033[1;31m'
 cgrn='\033[1;32m'
 cend='\033[0m'
 
-HEXXEN_URL="https://github.com/Hexxeh/rpi-firmware/raw"
-RASPI_URL="https://github.com/raspberrypi/linux/archive"
+FIRMWARE_URL="https://github.com/raspberrypi/firmware/raw"
+KERNEL_URL="https://github.com/raspberrypi/linux/archive"
 PCP_URL="https://repo.picoreplayer.org/repo"
 
-HEXXEH_COMMIT=
+FIRMWARE_COMMIT=
 DEST_DIR="/tmp"
 WORK_DIR="/tmp"
 
@@ -39,7 +39,7 @@ usage() {
 Download and prepare Raspberry Pi kernel sources for building out of kernel modules.
 
 Mandatory arguments:
-  HASH   specify the Hexxeh commit hash of the kernel release to be downloaded
+  HASH   specify the firmware commit hash of the kernel release to be downloaded
 
 Optional arguments:
   -d, --directory=DIR          store the sources in DIR, defaults to '/tmp'
@@ -97,7 +97,7 @@ set_pcp_vars() { # <$1: Relase name>
 
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
-  RASPI_COMMIT=$(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/git_hash)
+  RASPI_COMMIT=$(wget -nv -O - ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/git_hash)
   RASPI_LINUX_ARCHIVE_NAME=${RASPI_COMMIT}.tar.gz
 
   if [[ ! ${RASPI_COMMIT} =~ [0-9a-f]{40} ]]; then
@@ -107,7 +107,7 @@ get_sources() {
 
   # Get the kernel release version, appends release names to UNAME_R
   for v in "" "7" "7l"; do
-    UNAME_R+=($(wget -nv -O - ${HEXXEN_URL}/${HEXXEH_COMMIT}/uname_string$v \
+    UNAME_R+=($(wget -nv -O - ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/uname_string$v \
       | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
   done
 
@@ -119,7 +119,7 @@ get_sources() {
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
-  wget -nv --show-progress -nc ${RASPI_URL}/${RASPI_LINUX_ARCHIVE_NAME}
+  wget -nv --show-progress -nc ${KERNEL_URL}/${RASPI_LINUX_ARCHIVE_NAME}
 }
 
 get_armver() { # <$1: Relase name>
@@ -163,7 +163,7 @@ get_config() { # <$1: Relase name>
         "module")
           info "Extracting .config file from 'configs.ko'"
           wget -nv --show-progress -O configs.ko \
-              ${HEXXEN_URL}/${HEXXEH_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko
+              ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko
           ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
           ;;
         "proc")
@@ -188,7 +188,7 @@ get_symvers() { # <$1: Relase name>
     "")
       local suffix=$(get_armver ${uname_r})
       wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
-          ${HEXXEN_URL}/${HEXXEH_COMMIT}/Module${suffix}.symvers
+          ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/Module${suffix}.symvers
       ;;
     "pcp")
       wget -4 -nv --show-progress -O - ${PCP_URL_REFIX}Module.symvers.xz \
@@ -235,10 +235,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-HEXXEH_COMMIT=${@:$OPTIND:1}
+FIRMWARE_COMMIT=${@:$OPTIND:1}
 
-if [[ ! ${HEXXEH_COMMIT} ]]; then
-  die "Can't proceed without Hexxeh commit hash." "${USAGE_HINT}"
+if [[ ! ${FIRMWARE_COMMIT} ]]; then
+  die "Can't proceed without firmware commit hash." "${USAGE_HINT}"
 fi
 
 if [[ ! -x "$(command -v bsdtar)" ]]; then

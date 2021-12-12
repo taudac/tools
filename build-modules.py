@@ -123,7 +123,7 @@ def notify_except(note):
 
 
 def main(cross_compile_args=""):
-    hexxeh = GitHubRepo("Hexxeh", "rpi-firmware")
+    firmware = GitHubRepo("raspberrypi", "firmware")
     taudac = GitHubRepo("taudac", "modules")
     git_cmd = ['git', '-C', '../modules/']
 
@@ -148,7 +148,7 @@ def main(cross_compile_args=""):
 
     # check if newer kernels are available
     pending = []
-    for c in hexxeh:
+    for c in firmware:
         m = re.match(r'kernel:? ([Bb]ump|[Uu]pdate) to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(2)
@@ -161,7 +161,7 @@ def main(cross_compile_args=""):
                     .format(len(pending), pending[-1][1], pending[-1][0]))
 
     if not pending:
-        print("Up-to-date with latest 'Hexxeh' kernel")
+        print("Up-to-date with latest kernel")
         return
 
     if not query_yes_no("Do you want to build new modules?"):

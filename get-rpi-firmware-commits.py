@@ -3,8 +3,8 @@ import urllib2, json
 import argparse
 
 GITHUB_API_URL = 'https://api.github.com/repos'
-USER = 'Hexxeh'
-REPO = 'rpi-firmware'
+USER = 'raspberrypi'
+REPO = 'firmware'
 
 def main(args):
     try:
@@ -27,3 +27,4 @@ if __name__ == '__main__':
             help="start with given revision, defaults to HEAD")
     args = parser.parse_args()
     main(args)
+
