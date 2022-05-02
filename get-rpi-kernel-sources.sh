@@ -163,8 +163,10 @@ get_config() { # <$1: Relase name>
         "module")
           info "Extracting .config file from 'configs.ko'"
           wget -nv --show-progress -O configs.ko \
-              ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko
-          ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config
+              ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko \
+              || die "Downloading configs.ko failed!"
+          ${SRC_DIR}/scripts/extract-ikconfig configs.ko  > ${SRC_DIR}/.config \
+              || die "Extracting .config file failed!"
           ;;
         "proc")
           info "Extracting .config file from '/proc/config.gz'"
