@@ -203,7 +203,8 @@ prepare_sources() { # <$1: Relase name>
   local uname_r=$1
   # Prepare modules
   info "Preparing ${uname_r} modules ..."
-  make -C ${SRC_DIR} \
+
+  yes "" | make -C ${SRC_DIR} \
       LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
       ${MAKE_CROSS_COMPILE_ARGS} modules_prepare
   [[ $? -eq 0 ]] || die "make modules_prepare failed!"
