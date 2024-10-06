@@ -29,7 +29,7 @@ class GitHubRepo:
         return self
 
     def __next__(self):
-        ret = self.log(max_count=1, revision="HEAD~{}".format(self.n))
+        ret = self.log(max_count=1, revision=f"HEAD~{self.n}")
         if ret is not None:
             self.n += 1
             return ret[0]
@@ -38,9 +38,7 @@ class GitHubRepo:
 
     def log(self, max_count=10, revision="HEAD"):
         try:
-            json_str = urlopen("{}/{}/{}/commits?per_page={}&sha={}"
-                    .format(self.GITHUB_API_URL, self.user, self.project,
-                            max_count, revision)).read()
+            json_str = urlopen(f"{self.GITHUB_API_URL}/{self.user}/{self.project}/commits?per_page={max_count}&sha={revision}").read()
             commits = json.loads(json_str.decode('utf-8'))
         except (HTTPError, URLError) as e:
             print(e)
@@ -66,7 +64,7 @@ def send_email(subject='', body='', filename=None):
             part.set_payload(file.read())
         encoders.encode_base64(part)
         part.add_header('Content-Disposition',
-                'attachment; filename="{}"'.format(os.path.basename(filename)))
+                f'attachment; filename="{os.path.basename(filename)}"')
         msg.attach(part)
 
     print("Sending email...")
@@ -84,7 +82,7 @@ def query_yes_no(question):
     yes = {'yes', 'y', ''}
     no = {'no', 'n'}
 
-    print("{} [Y/n] ".format(question), end='')
+    print(f"{question} [Y/n] ", end='')
     while True:
         choice = input().lower()
         if choice in yes:
@@ -105,8 +103,8 @@ def call(cmd, **kwargs):
 
 
 def notify_done(kver):
-    subject = "TauDAC modules for kernel {}".format(kver)
-    body = "TauDAC modules for kernel version {} have been built.".format(kver)
+    subject = f"TauDAC modules for kernel {kver}"
+    body = f"TauDAC modules for kernel version {kver} have been built."
     print(body)
     if args.command == 'email':
         send_email(subject, body)
@@ -144,7 +142,7 @@ def main(cross_compile_args=""):
             print("Didn't find supported kernel version!")
             return
 
-    print("Latest supported kernel is {}".format(ckver))
+    print(f"Latest supported kernel is {ckver}")
 
     # check if newer kernels are available
     pending = []
@@ -157,8 +155,7 @@ def main(cross_compile_args=""):
             if nkver in [v[1] for v in pending]:
                 break
             pending.append((c[0], nkver))
-            print("[{:02d}] New kernel available: {} ({})"
-                    .format(len(pending), pending[-1][1], pending[-1][0]))
+            print(f"[{len(pending):02d}] New kernel available: {pending[-1][1]} ({pending[-1][0]})")
 
     if not pending:
         print("Up-to-date with latest kernel")
@@ -179,9 +176,9 @@ def main(cross_compile_args=""):
         # download
         gks_args = ['./get-rpi-kernel-sources.sh', sha]
         if args.directory is not None:
-            gks_args.insert(1, "-d{}".format(args.directory))
+            gks_args.insert(1, f"-d{args.directory}")
         if args.working_directory is not None:
-            gks_args.insert(1, "-w{}".format(args.working_directory))
+            gks_args.insert(1, f"-w{args.working_directory}")
         call(gks_args)
         # remove old modules
         rmtree('../modules/lib', ignore_errors=True)
@@ -201,7 +198,7 @@ def main(cross_compile_args=""):
         call(git_cmd + ['commit', '-am', msg])
         # git tag
         call(git_cmd + ['tag', '--force',
-                'rpi-volumio-{}-taudac-modules'.format(kver)])
+                f'rpi-volumio-{kver}-taudac-modules'])
         # git push
         call(git_cmd + ['log', '--oneline', '--decorate=on', 'origin/master..'])
         if query_yes_no("Do you want to publish?"):
@@ -215,12 +212,12 @@ def dir_path(path):
     if os.path.isdir(path):
         return path
     else:
-        raise argparse.ArgumentTypeError("'{}' is not a valid path".format(path))
+        raise argparse.ArgumentTypeError(f"'{path}' is not a valid path")
 
 
 def new_file_path(file):
     if os.path.isfile(file):
-        raise argparse.ArgumentTypeError("'{}' exists".format(file))
+        raise argparse.ArgumentTypeError(f"'{file}' exists")
     else:
         return file
 
@@ -278,10 +275,10 @@ if __name__ == '__main__':
         else:
             main(CROSS_COMPILE_ARGS)
     except subprocess.CalledProcessError as e:
-        note = ("command '{}' returned error code {}".format(e.cmd, e.returncode))
+        note = f"command '{e.cmd}' returned error code {e.returncode}"
         notify_except(note)
     except subprocess.TimeoutExpired as e:
-        note = ("command '{}' expired".format(e.cmd))
+        note = f"command '{e.cmd}' expired"
         notify_except(note)
 
 # vim: ts=4 sw=4 sts=4 et
