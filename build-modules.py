@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 import json, re
 import os, subprocess, shlex
 from shutil import rmtree
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 from packaging import version
 
@@ -19,10 +20,19 @@ CROSS_COMPILE_ARGS = ['ARCH=arm', 'CROSS_COMPILE=arm-linux-gnueabihf-']
 
 
 class GitHubRepo:
-    def __init__(self, user, project):
+    def __init__(self, user, project, token=None):
         self.GITHUB_API_URL = 'https://api.github.com/repos'
         self.user = user
         self.project = project
+        if token is None:
+            self.token = os.getenv('GITHUB_TOKEN')
+            if self.token is None:
+                print(f"Warning: {user}@{project}: GITHUB_TOKEN environment variable not set.")
+            else:
+                print(f"Info: {user}@{project}: Using GITHUB_TOKEN environment variable.")
+        else:
+            self.token = token
+            print(f"Info: {user}@{project}: Using provided token.")
 
     def __iter__(self):
         self.n = 0
@@ -38,9 +48,19 @@ class GitHubRepo:
 
     def log(self, max_count=10, revision="HEAD"):
         try:
-            json_str = urlopen(f"{self.GITHUB_API_URL}/{self.user}/{self.project}/commits?per_page={max_count}&sha={revision}").read()
+            url = f"{self.GITHUB_API_URL}/{self.user}/{self.project}/commits?per_page={max_count}&sha={revision}"
+            request = Request(url)
+            if self.token:
+                request.add_header("Authorization", f"token {self.token}")
+            json_str = urlopen(request).read()
             commits = json.loads(json_str.decode('utf-8'))
-        except (HTTPError, URLError) as e:
+        except HTTPError as e:
+            if e.code == 403:
+                print("HTTP Error 403: Rate limit exceeded.\n"
+                      "Consider setting the GITHUB_TOKEN environment "
+                      "variable to increase your rate limit.")
+            sys.exit(1)
+        except URLError as e:
             print(e)
             raise
 
