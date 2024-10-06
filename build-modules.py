@@ -206,7 +206,7 @@ def main(cross_compile_args=""):
         for pver in ["", "-v7", "-v7l"]:
             make_args = ['make', '--no-print-directory', '--always-make',
                     '-C', '../taudac-driver-dkms/src/',
-                    'INSTALL_TO_ORIGDIR=1', *cross_compile_args,
+                    'INSTALL_TO_ORIGDIR=1', *cross_compile_args, *args.extra_make_args,
                     f'kernelver={kver}{pver}+',
                     f'prefix={args.directory}', 'release']
             call(make_args)
@@ -262,6 +262,9 @@ if __name__ == '__main__':
             help='stop after building <N> versions')
     parser.add_argument('-C', '--current-version', metavar='<VER>',
             help='assume VER is the latest supported kernel version')
+    parser.add_argument('-e', '--extra-make-args', metavar='<ARGS>',
+            default='', type=str,
+            help='extra arguments to pass to the build process (make)')
 
     # sub command email
     subparsers = parser.add_subparsers(dest='command', metavar='<command>')
@@ -285,7 +288,9 @@ if __name__ == '__main__':
     email_parser.add_argument('-P', '--smtp-server-port', metavar='<port>',
             default=587,
             help='the outgoing SMTP server port, defaults to 587')
+
     args = parser.parse_args()
+    args.extra_make_args = args.extra_make_args.split()
 
     try:
         # check if we need to cross compile
