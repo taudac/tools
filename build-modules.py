@@ -173,7 +173,8 @@ def main(cross_compile_args=""):
             if version.parse(nkver) <= version.parse(ckver):
                 break
             if nkver in [v[1] for v in pending]:
-                break
+                print(f"WARNING: Skipping {nkver}, already in pending list.")
+                continue
             pending.append((c[0], nkver))
             print(f"[{len(pending):02d}] New kernel available: {pending[-1][1]} ({pending[-1][0]})")
 
