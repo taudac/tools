@@ -217,8 +217,9 @@ def main(cross_compile_args=""):
             msg = f.read().lstrip('#').rstrip()
         call(git_cmd + ['commit', '-am', msg])
         # git tag
-        call(git_cmd + ['tag', '--force',
-                f'rpi-volumio-{kver}-taudac-modules'])
+        if not args.do_not_tag:
+            call(git_cmd + ['tag', '--force',
+                    f'rpi-volumio-{kver}-taudac-modules'])
         # git push
         call(git_cmd + ['log', '--oneline', '--decorate=on', 'origin/master..'])
         if query_yes_no("Do you want to publish?"):
@@ -265,6 +266,9 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--extra-make-args', metavar='<ARGS>',
             default='', type=str,
             help='extra arguments to pass to the build process (make)')
+    parser.add_argument('-n', '--do-not-tag',
+            dest='do_not_tag', action='store_true',
+            help='do not tag the new modules in the git repository')
 
     # sub command email
     subparsers = parser.add_subparsers(dest='command', metavar='<command>')
