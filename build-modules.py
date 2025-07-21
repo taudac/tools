@@ -15,13 +15,14 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-RASPI32_SUFFIXES = ['', '-v7', '-v7l']
-RASPI64_SUFFIXES = ['-v8', '-v8-16k']
+RASPI32_SUFFIXES = ['-v6', '-v7', '-v7l']
+RASPI64_SUFFIXES = ['-v8', '-2712']
 RASPI_SUFFIXES = RASPI32_SUFFIXES + RASPI64_SUFFIXES
 IS_RASPI32_RE = r'arm(v[6-7](l|hf))$'
 IS_RASPI64_RE = r'aarch64$'
 CROSS_COMPILE_ARGS_32 = ['ARCH=arm', 'CROSS_COMPILE=arm-linux-gnueabihf-']
 CROSS_COMPILE_ARGS_64 = ['ARCH=arm64', 'CROSS_COMPILE=aarch64-linux-gnu-']
+EXTRAVERSION="+rpt-rpi"
 
 
 class GitHubRepo:
@@ -226,7 +227,7 @@ def main():
             make_args = ['make', '--no-print-directory', '--always-make',
                     '-C', '../taudac-driver-dkms/src/',
                     'INSTALL_TO_ORIGDIR=1', *cross_compile_args, *args.extra_make_args,
-                    f'kernelver={kver}{pver}+',
+                    f'kernelver={kver}{EXTRAVERSION}{pver}',
                     f'prefix={args.directory}', 'release']
             call(make_args)
         # git add new modules
