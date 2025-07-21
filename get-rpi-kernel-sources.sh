@@ -18,11 +18,14 @@ LOCALVERSION=+
 CONFIG_MODE="module"
 DO_LINKS="true"
 
-CROSS_COMPILE_TOOLCHAIN=arm-linux-gnueabihf-
-MAKE_CROSS_COMPILE_ARGS=
+CROSS_COMPILE_TOOLCHAIN_32=arm-linux-gnueabihf-
+CROSS_COMPILE_TOOLCHAIN_64=aarch64-linux-gnu-
 
 # Global associative array for version->suffix mapping
 declare -A UNAME_R_TO_SUFFIX
+
+# Global array for kernel version strings
+UNAME_R=()
 
 info() { # <$1: info message>
   printf "${cgrn}$1${cend}\n"
@@ -46,7 +49,8 @@ Optional arguments:
   -w, --working-directory=DIR  use DIR as working directory, defaults to '/tmp'
   -L, --local-version=VER      set make variable LOCALVERISON to VER, defaults to '+'
   -E, --extra-version=VER      set make variable EXTRAVERSION to VER
-  -r, --release=VER            download release VER only, one of: 'v6', 'v7' or 'v7l'
+  -r, --release=VER            download release VER only, one of: 'v6', 'v7', 'v7l', 'v8' or 'v8-16k'
+                               if not specified, all releases are downloaded
   -c, --config=MODE            if MODE='module': get .config file from configs.ko module,
                                if MODE='proc': get .config file from proc /proc/config.gz,
                                if MODE='skip': skip getting .config file,
@@ -212,9 +216,30 @@ prepare_sources() { # <$1: Relase name>
   # Prepare modules
   info "Preparing ${uname_r} modules ..."
 
+  # Set cross-compile args, if needed
+  local cross_compile_args=""
+  local suffix=$(get_uname_string_suffix ${uname_r})
+  case "${suffix}" in
+    ""|"7"|"7l")
+      # 32-bit ARM (v6, v7, v7l)
+      if [[ ! ${host_uname_m} =~ ^(arm(v[6-7]l|hf))$ ]]; then
+        cross_compile_args="ARCH=arm CROSS_COMPILE=${CROSS_COMPILE_TOOLCHAIN_32}"
+      fi
+      ;;
+    "8"|"_2712")
+      # 64-bit ARM (v8, v8-16k/Pi5)
+      if [[ ! ${host_uname_m} =~ ^(aarch64)$ ]]; then
+        cross_compile_args="ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE_TOOLCHAIN_64}"
+      fi
+      ;;
+    *)
+      die "Unexpected release suffix: ${suffix}"
+      ;;
+  esac
+
   yes "" | make -C ${SRC_DIR} \
       LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
-      ${MAKE_CROSS_COMPILE_ARGS} modules_prepare
+      ${cross_compile_args} modules_prepare
   [[ $? -eq 0 ]] || die "make modules_prepare failed!"
   info "\nDone, you can now build ${uname_r} kernel modules"
 }
@@ -258,7 +283,7 @@ fi
 
 if [ -n "${DO_RELEASE}" ]; then
   case "${DO_RELEASE}" in
-    "v6"|"v7"|"v7l") ;;
+    "v6"|"v7"|"v7l"|"v8"|"v8-16k") ;;
        *) die "Invalid release." "${USAGE_HINT}"
   esac
 fi
@@ -276,19 +301,11 @@ case ${DISTRO} in
   *)        die "Invalid distro mode." "${USAGE_HINT}"
 esac
 
-# Check if we need to cross compile
-host_uname_m=$(uname -m)
-if [[ ! ${host_uname_m} =~ ^arm(v[6-7]l|hf)$ ]]; then
-  info "Host machine is ${host_uname_m}, setting up cross-compile toolchain"
-  if [[ ! -x "$(command -v ${CROSS_COMPILE_TOOLCHAIN}gcc)" ]]; then
-    die "Could not find '${CROSS_COMPILE_TOOLCHAIN}gcc', Exiting..."
-  fi
-  MAKE_CROSS_COMPILE_ARGS="ARCH=arm CROSS_COMPILE=${CROSS_COMPILE_TOOLCHAIN}"
-fi
-
 #------------------------------------------------------------------------------
 # Main
 #------------------------------------------------------------------------------
+host_uname_m=$(uname -m)
+info "Host machine is ${host_uname_m}"
 cd ${WORK_DIR}
 get_sources
 
@@ -300,6 +317,8 @@ for r in ${UNAME_R[@]}; do
       "")      [[ "${DO_RELEASE}" == "v6" ]]     || continue ;;
       "7")     [[ "${DO_RELEASE}" == "v7" ]]     || continue ;;
       "7l")    [[ "${DO_RELEASE}" == "v7l" ]]    || continue ;;
+      "8")     [[ "${DO_RELEASE}" == "v8" ]]     || continue ;;
+      "_2712") [[ "${DO_RELEASE}" == "v8-16k" ]] || continue ;;
       *) die "Unexpected release suffix: ${suffix}" ;;
     esac
   fi

@@ -15,8 +15,13 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-IS_RASPI_RE = r'arm(v[6-7](l|hf))$'
-CROSS_COMPILE_ARGS = ['ARCH=arm', 'CROSS_COMPILE=arm-linux-gnueabihf-']
+RASPI32_SUFFIXES = ['', '-v7', '-v7l']
+RASPI64_SUFFIXES = ['-v8', '-v8-16k']
+RASPI_SUFFIXES = RASPI32_SUFFIXES + RASPI64_SUFFIXES
+IS_RASPI32_RE = r'arm(v[6-7](l|hf))$'
+IS_RASPI64_RE = r'aarch64$'
+CROSS_COMPILE_ARGS_32 = ['ARCH=arm', 'CROSS_COMPILE=arm-linux-gnueabihf-']
+CROSS_COMPILE_ARGS_64 = ['ARCH=arm64', 'CROSS_COMPILE=aarch64-linux-gnu-']
 
 
 class GitHubRepo:
@@ -140,7 +145,7 @@ def notify_except(note):
             send_email(subject, note)
 
 
-def main(cross_compile_args=""):
+def main():
     firmware = GitHubRepo("raspberrypi", "firmware")
     taudac = GitHubRepo("taudac", "modules")
     git_cmd = ['git', '-C', '../modules/']
@@ -203,8 +208,21 @@ def main(cross_compile_args=""):
         call(gks_args)
         # remove old modules
         rmtree('../modules/lib', ignore_errors=True)
+
+        # check if we need to cross compile
+        machine = subprocess.check_output("uname -m", shell=True).decode('utf-8').strip()
+
         # launch make
-        for pver in ["", "-v7", "-v7l"]:
+        for pver in RASPI_SUFFIXES:
+            cross_compile_args = []
+
+            if pver in RASPI32_SUFFIXES:
+                if not re.match(IS_RASPI32_RE, machine):
+                    cross_compile_args = CROSS_COMPILE_ARGS_32
+            elif pver in RASPI64_SUFFIXES:
+                if not re.match(IS_RASPI64_RE, machine):
+                    cross_compile_args = CROSS_COMPILE_ARGS_64
+
             make_args = ['make', '--no-print-directory', '--always-make',
                     '-C', '../taudac-driver-dkms/src/',
                     'INSTALL_TO_ORIGDIR=1', *cross_compile_args, *args.extra_make_args,
@@ -298,12 +316,7 @@ if __name__ == '__main__':
     args.extra_make_args = args.extra_make_args.split()
 
     try:
-        # check if we need to cross compile
-        machine = subprocess.check_output("uname -m", shell=True)
-        if re.match(IS_RASPI_RE, machine.decode('utf-8')) is not None:
-            main()
-        else:
-            main(CROSS_COMPILE_ARGS)
+        main()
     except subprocess.CalledProcessError as e:
         note = f"command '{e.cmd}' returned error code {e.returncode}"
         notify_except(note)
