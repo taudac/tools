@@ -236,8 +236,7 @@ prepare_sources() { # <$1: Relase name>
       die "Unexpected release suffix: ${suffix}"
       ;;
   esac
-
-  yes "" | make -C ${SRC_DIR} \
+  make -C ${SRC_DIR} \
       LOCALVERSION=${LOCALVERSION} EXTRAVERSION=${EXTRAVERSION} \
       ${cross_compile_args} modules_prepare
   [[ $? -eq 0 ]] || die "make modules_prepare failed!"
