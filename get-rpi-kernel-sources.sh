@@ -14,7 +14,8 @@ FIRMWARE_COMMIT=
 DEST_DIR="/tmp"
 WORK_DIR="/tmp"
 
-LOCALVERSION=+
+LOCALVERSION=""
+EXTRAVERSION="+rpt-rpi"
 CONFIG_MODE="module"
 DO_LINKS="true"
 
@@ -47,8 +48,8 @@ Mandatory arguments:
 Optional arguments:
   -d, --directory=DIR          store the sources in DIR, defaults to '/tmp'
   -w, --working-directory=DIR  use DIR as working directory, defaults to '/tmp'
-  -L, --local-version=VER      set make variable LOCALVERISON to VER, defaults to '+'
-  -E, --extra-version=VER      set make variable EXTRAVERSION to VER
+  -L, --local-version=VER      set make variable LOCALVERISON to VER
+  -E, --extra-version=VER      set make variable EXTRAVERSION to VER, defaults to '+rpt-rpi'
   -r, --release=VER            download release VER only, one of: 'v6', 'v7', 'v7l', 'v8' or 'v8-16k'
                                if not specified, all releases are downloaded
   -c, --config=MODE            if MODE='module': get .config file from configs.ko module,
@@ -142,9 +143,25 @@ get_sources() {
 
 make_dirs() { # <$1: Relase name>
   local uname_r=$1
+  local suffix=$(get_uname_string_suffix ${uname_r})
+
+  # Extract base version (e.g. 6.12.36-v7l+ -> 6.12.36)
+  local base_version="${uname_r%%[-+]*}"
+
+  # Create directory name: base_version + EXTRAVERSION + architecture suffix
+  local dir_name="${base_version}${EXTRAVERSION}"
+  case "${suffix}" in
+    "")      dir_name="${dir_name}-v6" ;;
+    "7")     dir_name="${dir_name}-v7" ;;
+    "7l")    dir_name="${dir_name}-v7l" ;;
+    "8")     dir_name="${dir_name}-v8" ;;
+    "_2712") dir_name="${dir_name}-2712" ;;
+    *) die "Unexpected release suffix: ${suffix}" ;;
+  esac
+
   # Make directories and links
-  SRC_DIR="${DEST_DIR}/usr/src/${uname_r}"
-  MOD_DIR="${DEST_DIR}/lib/modules/${uname_r}"
+  SRC_DIR="${DEST_DIR}/usr/src/${dir_name}"
+  MOD_DIR="${DEST_DIR}/lib/modules/${dir_name}"
   mkdir -vp ${SRC_DIR}
   if [ ${DO_LINKS} = "true" ]; then
     mkdir -vp ${MOD_DIR}
