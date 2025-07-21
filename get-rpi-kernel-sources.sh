@@ -172,10 +172,11 @@ get_config() { # <$1: Relase name>
       case "${CONFIG_MODE}" in
         "module")
           info "Extracting .config file from the 'configs' module"
-          wget -nv --show-progress -O configs.ko.xz  \
+          local config_file="configs-${uname_r}.ko.xz"
+          wget -nv --show-progress -O "$config_file"  \
               ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/modules/${uname_r}/kernel/kernel/configs.ko.xz \
               || die "Downloading the 'configs' module failed!"
-          ${SRC_DIR}/scripts/extract-ikconfig configs.ko.xz  > ${SRC_DIR}/.config \
+          ${SRC_DIR}/scripts/extract-ikconfig ${config_file}  > ${SRC_DIR}/.config \
               || die "Extracting .config file failed!"
           ;;
         "proc")
