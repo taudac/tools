@@ -24,6 +24,9 @@ DO_V7L="false"
 CROSS_COMPILE_TOOLCHAIN=arm-linux-gnueabihf-
 MAKE_CROSS_COMPILE_ARGS=
 
+# Global associative array for version->suffix mapping
+declare -A UNAME_R_TO_SUFFIX
+
 info() { # <$1: info message>
   printf "${cgrn}$1${cend}\n"
 }
@@ -95,6 +98,12 @@ set_pcp_vars() { # <$1: Relase name>
   PCP_URL_REFIX+="/${PCP_UNAME_R}_"
 }
 
+get_uname_string_suffix() { # <$1: Relase name>
+  # Given a release name, returns the "uname_string_" file name suffix.
+  # For example "7l" given "4.19.86-v7l+" or "_2712" given "6.12.36-v8-16k+".
+  echo "${UNAME_R_TO_SUFFIX[$1]}" || die "Unknown release name: $1"
+}
+
 get_sources() {
   # Get the Raspberrypi corrsponding commit hash
   RASPI_COMMIT=$(wget -nv -O - ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/git_hash)
@@ -105,28 +114,29 @@ get_sources() {
   fi
   info "raspberrypi/linux commit is ${RASPI_COMMIT}"
 
-  # Get the kernel release version, appends release names to UNAME_R
-  for v in "" "7" "7l"; do
-    UNAME_R+=($(wget -nv -O - ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/uname_string$v \
-      | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}'))
+  # Get the kernel release version, populates global associative array
+  for v in "" "7" "7l" "8" "_2712"; do
+    version_string=$(wget -nv -O - ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/uname_string$v \
+      | sed -r '/.*([1-9]{1}\.[0-9]{1,2}\.[0-9]{1,2}.*\+).*/{s//\1/;h};${x;/./{x;q0};x;q1}')
+    if [[ -n "$version_string" ]]; then
+      UNAME_R_TO_SUFFIX["$version_string"]="$v"  # Map version to suffix
+      UNAME_R+=("$version_string")  # Keep compatibility with existing array
+    fi
   done
 
   if [ ${#UNAME_R[@]} -eq 0 ]; then
     die "Can't find release version string!"
   else
-    info "Found ${#UNAME_R[*]} versions: ${UNAME_R[*]}"
+    info "Found ${#UNAME_R[*]} versions:"
+    for version in "${UNAME_R[@]}"; do
+      local suffix=$(get_uname_string_suffix ${version})
+      printf "  * %-5s -> %s\n" "$suffix" "$version"
+    done
   fi
 
   # Get kernel sources
   info "Downloading kernel sources to $(pwd) ..."
   wget -nv --show-progress -nc ${KERNEL_URL}/${RASPI_LINUX_ARCHIVE_NAME}
-}
-
-get_armver() { # <$1: Relase name>
-  # Given a release name, returns the arm version suffix
-  # For example 7l for 4.19.86-v7l+
-  local v=$(echo $1 | sed -nr 's/([0-9]\.[0-9]+\.[0-9]+)(-v)?([7-8]l?)?\+/\3/p')
-  echo "$v"
 }
 
 make_dirs() { # <$1: Relase name>
@@ -188,7 +198,7 @@ get_symvers() { # <$1: Relase name>
   info "Downloading Module.symvers file for kernel ${uname_r}"
   case "${DISTRO}" in
     "")
-      local suffix=$(get_armver ${uname_r})
+      local suffix=$(get_uname_string_suffix ${uname_r})
       wget -nv --show-progress -O ${SRC_DIR}/Module.symvers \
           ${FIRMWARE_URL}/${FIRMWARE_COMMIT}/extra/Module${suffix}.symvers
       ;;
