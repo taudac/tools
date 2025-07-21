@@ -17,9 +17,6 @@ WORK_DIR="/tmp"
 LOCALVERSION=+
 CONFIG_MODE="module"
 DO_LINKS="true"
-DO_V6="false"
-DO_V7="false"
-DO_V7L="false"
 
 CROSS_COMPILE_TOOLCHAIN=arm-linux-gnueabihf-
 MAKE_CROSS_COMPILE_ARGS=
@@ -261,15 +258,9 @@ fi
 
 if [ -n "${DO_RELEASE}" ]; then
   case "${DO_RELEASE}" in
-    "v6") DO_V6="true" ;;
-    "v7") DO_V7="true" ;;
-    "v7l") DO_V7L="true" ;;
+    "v6"|"v7"|"v7l") ;;
        *) die "Invalid release." "${USAGE_HINT}"
   esac
-else
-  DO_V6="true"
-  DO_V7="true"
-  DO_V7L="true"
 fi
 
 case "${CONFIG_MODE}" in
@@ -302,10 +293,15 @@ cd ${WORK_DIR}
 get_sources
 
 for r in ${UNAME_R[@]}; do
-  if [[ $r =~ -v7 ]]; then
-    [[ ${DO_V7} = "true" ]] || continue
-  else
-    [[ ${DO_V6} = "true" ]] || continue
+
+  suffix=$(get_uname_string_suffix ${r})
+  if [[ -n "${DO_RELEASE}" ]]; then
+    case "${suffix}" in
+      "")      [[ "${DO_RELEASE}" == "v6" ]]     || continue ;;
+      "7")     [[ "${DO_RELEASE}" == "v7" ]]     || continue ;;
+      "7l")    [[ "${DO_RELEASE}" == "v7l" ]]    || continue ;;
+      *) die "Unexpected release suffix: ${suffix}" ;;
+    esac
   fi
   case ${DISTRO} in
     "")                       make_dirs $r             ;;
