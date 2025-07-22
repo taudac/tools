@@ -211,6 +211,23 @@ get_config() { # <$1: Relase name>
   esac
 }
 
+patch_config() { # <$1: Relase name>
+  local uname_r=$1
+  local suffix=$(get_uname_string_suffix ${uname_r})
+
+
+  case "${suffix}" in
+    "")      # For v6: "" -> "-v6"
+      info "Patching .config for ${uname_r} to use -v6 suffix"
+      sed -i -E 's/^(CONFIG_LOCALVERSION=)""$/\1"-v6"/' ${SRC_DIR}/.config
+      ;;
+    "_2712") # For _2712: "-v8-16k" -> "-2712"
+      info "Patching .config for ${uname_r} to use -2712 suffix"
+      sed -i -E 's/^(CONFIG_LOCALVERSION=)"-v8-16k"$/\1"-2712"/' ${SRC_DIR}/.config
+      ;;
+  esac
+}
+
 get_symvers() { # <$1: Relase name>
   local uname_r=$1
   # Get Module.symvers files
@@ -344,6 +361,7 @@ for r in ${UNAME_R[@]}; do
   esac
   extract_sources $r
   get_config      $r
+  patch_config    $r
   get_symvers     $r
   prepare_sources $r
 done
