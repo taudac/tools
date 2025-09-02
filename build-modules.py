@@ -75,6 +75,31 @@ class GitHubRepo:
                     (c['sha'][0:8], c['commit']['message'].split('\n')[0]))
         return messages
 
+    def cat(self, path, commit=None):
+        try:
+            url = f"{self.GITHUB_API_URL}/{self.user}/{self.project}/contents/{path}"
+            if commit:
+                url += f"?ref={commit}"
+            request = Request(url)
+            if self.token:
+                request.add_header("Authorization", f"token {self.token}")
+            response = urlopen(request)
+            data = json.loads(response.read().decode('utf-8'))
+            if data.get('encoding') == 'base64':
+                import base64
+                return base64.b64decode(data['content']).decode('utf-8')
+            else:
+                return data['content']
+        except HTTPError as e:
+            if e.code == 404:
+                print(f"File not found: {path} at {commit if commit else 'default branch'}")
+                return None
+            else:
+                print(f"HTTP Error: {e}")
+                raise
+        except URLError as e:
+            print(e)
+            raise
 
 def send_email(subject='', body='', filename=None):
     msg = MIMEMultipart()
@@ -175,6 +200,12 @@ def main():
         m = re.match(r'kernel:? ([Bb]ump|[Uu]pdate) to ([\d\.]+)', c[1])
         if m is not None:
             nkver = m.group(2)
+            # The kernel version in the commit message is not always correct.
+            # We need to verify it against the extra/uname_string file.
+            uname_r = re.search(r'(\d+\.\d+\.\d+)', firmware.cat('extra/uname_string', commit=c[0])).group(0)
+            if nkver != uname_r:
+                print(f"WARNING: Commit message '{c[1]}' does not match uname_string version '{uname_r}'")
+                nkver = uname_r
             if version.parse(nkver) <= version.parse(ckver):
                 break
             if nkver in [v[1] for v in pending]:
